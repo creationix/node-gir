@@ -74,7 +74,9 @@ missing part is node bindings to libgirepository.  Hence this project.
 ## Why not use Seed or GJS
 
 Because they are nice, but not what I'm looking for.  Node is really popular and
-it would be nice to be able to use it for desktop tools and applications.
+it would be nice to be able to use it for desktop tools and applications.  
+
+Besides, I really like V8.
 
 ## Plea for Help
 
@@ -82,6 +84,13 @@ I am not a C or C++ coder and have never once made node bindings.  I want this
 library bad enough that I will learn what's needed, but it will take a while
 since it's not my day job.  Anyone with experience in this stuff that would like
 to lend a hand would be much appreciated.
+
+## Implementation Notes
+
+Here are some links and notes as I try to figure out how to do this.
+
+ - <http://live.gnome.org/GObjectIntrospection/HowToWriteALanguageBinding>
+ - <http://developer.gnome.org/gi/unstable/gi-girepository.html>
 
 ## API Ideas
 
