@@ -91,6 +91,7 @@ Here are some links and notes as I try to figure out how to do this.
 
  - <http://live.gnome.org/GObjectIntrospection/HowToWriteALanguageBinding>
  - <http://developer.gnome.org/gi/unstable/gi-girepository.html>
+ - <https://github.com/rbranson/node-ffi>
 
 ## API Ideas
 
