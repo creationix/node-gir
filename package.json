@@ -1,0 +1,22 @@
+{
+  "name": "node_gir_native",
+  "description": "Node bindings to libgirepository",
+  "version": "0.0.1",
+  "homepage": "https://github.com/creationix/node-gir",
+  "author": "Tim Caswell <tim@creationix.com> (http://twitter.com/creationix)",
+  "main": "./build/default/node_gir_native.node",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:creationix/node-gir.git"
+  },
+  "directories": {
+    "build": "./build"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "scripts": {
+    "preinstall": "./configure",
+    "install": "make"
+  }
+}
