@@ -17,12 +17,12 @@ def configure(conf):
 
 def build(bld):
   obj = bld.new_task_gen("cxx", "shlib", "node_addon")
-  obj.target = "node_gir_native"
-  obj.source = "node_gir.cpp"
+  obj.target = "girepository"
+  obj.source = "src/girepository.cpp"
   obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
   obj.uselib = "GIREPOSITORY GLIB"
 
 def shutdown():
   if Options.commands['clean']:
-    if exists('node_gir_native.node'): unlink('node_gir_native.node')
+    if exists('girepository.node'): unlink('girepository.node')
 
