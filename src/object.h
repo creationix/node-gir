@@ -31,6 +31,9 @@ class GIRObject : public node::ObjectWrap {
   private:
     GIFunctionInfo *FindMethod(GIObjectInfo *inf, char *name);
     GIFunctionInfo *FindProperty(GIObjectInfo *inf, char *name);
+    
+    static v8::Handle<v8::Object> PropertyList(GIObjectInfo *info);
+    static v8::Handle<v8::Object> MethodList(GIObjectInfo *info);
 };
 
 }

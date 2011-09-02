@@ -5,11 +5,16 @@ gir.init();
 
 var gtk = exports.gtk = gir.load("Gtk");
 
+
+gtk.HBox.__properties__;
+gtk.HBox.__methods__;
 var w = new gtk.HBox();
 
-for(var k in w) {
-    console.log(k, w[k]);
-}
+w.__call__("function_name");
+w.__get_property__("property_name");
 
-w.__call__("set_spacing");
-w.__get_property__("name_asd");
+// FIXME: see object.cc
+/*
+w.ref();
+w.unref();
+*/

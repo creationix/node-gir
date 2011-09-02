@@ -53,8 +53,18 @@ void GIRObject::Initialize(Handle<Object> target, GIObjectInfo *info) {
     
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
     t->SetClassName(String::New(name));
+    // TODO: inherit
+    
     t->InstanceTemplate()->SetInternalFieldCount(1); 
+    
+    // to identify the object in the constructor
     t->PrototypeTemplate()->Set(String::NewSymbol("__classname__"), String::New(name));
+    
+    // a list of all properties (with parent properties)
+    t->Set(String::NewSymbol("__properties__"), GIRObject::PropertyList(info));
+    
+    // a list of all methods (with parent properties)
+    t->Set(String::NewSymbol("__methods__"), GIRObject::MethodList(info));
     
     
     SetPrototypeMethods(t, name);
@@ -78,18 +88,20 @@ Handle<Value> GIRObject::Unref(const Arguments &args) {
     HandleScope scope;
     
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
+    //FIXME: process hangs up
     g_object_info_get_unref_function_pointer(that->info)(that->obj);
     
-    return scope.Close(String::New("test"));
+    return scope.Close(Undefined());
 }
 
 Handle<Value> GIRObject::Ref(const Arguments &args) {
     HandleScope scope;
     
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
+    //FIXME: process hangs up
     g_object_info_get_ref_function_pointer(that->info)(that->obj);
     
-    return scope.Close(String::New("test"));
+    return scope.Close(Undefined());
 }
 
 Handle<Value> GIRObject::CallMethod(const Arguments &args) {
@@ -188,6 +200,62 @@ GIFunctionInfo *GIRObject::FindProperty(GIObjectInfo *inf, char *name) {
         g_base_info_unref(parent);
     }
     return prop;
+}
+
+Handle<Object> GIRObject::PropertyList(GIObjectInfo *info) {
+    Handle<Object> list = Object::New();
+    bool first = true;
+    g_base_info_ref(info);
+    
+    while(true) {
+        if(!first) {
+            GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
+                return list;
+            }
+            g_base_info_unref(info);
+            info = parent;
+        }
+        
+        int l = g_object_info_get_n_properties(info);
+        for(int i=0; i<l; i++) {
+            GIPropertyInfo *prop = g_object_info_get_property(info, i);
+            list->Set(Number::New(i), String::New(g_base_info_get_name(prop)));
+            g_base_info_unref(prop);
+        }
+        
+        first = false;
+    }
+    
+    return list;
+}
+
+Handle<Object> GIRObject::MethodList(GIObjectInfo *info) {
+    Handle<Object> list = Object::New();
+    bool first = true;
+    g_base_info_ref(info);
+    
+    while(true) {
+        if(!first) {
+            GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
+                return list;
+            }
+            g_base_info_unref(info);
+            info = parent;
+        }
+        
+        int l = g_object_info_get_n_methods(info);
+        for(int i=0; i<l; i++) {
+            GIFunctionInfo *func = g_object_info_get_method(info, i);
+            list->Set(Number::New(i), String::New(g_base_info_get_name(func)));
+            g_base_info_unref(func);
+        }
+        
+        first = false;
+    }
+    
+    return list;
 }
 
 
