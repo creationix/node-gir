@@ -14,13 +14,19 @@ def configure(conf):
   conf.check_tool("node_addon")
   conf.check_cfg(package='gobject-introspection-1.0', uselib_store='GIREPOSITORY', args='--cflags --libs')
   conf.check_cfg(package='glib', uselib_store='GLIB', args='--cflags --libs')
+  conf.check_cfg(package='gtk+-2.0', uselib_store='GTK', args='--cflags --libs')
+  conf.check_cfg(package='gdk-2.0', uselib_store='GDK', args='--cflags --libs')
 
 def build(bld):
   obj = bld.new_task_gen("cxx", "shlib", "node_addon")
   obj.target = "girepository"
-  obj.source = "src/girepository.cpp"
+  obj.source = [
+    "src/init.cc",
+    "src/namespace_loader.cc",
+    "src/object.cc"
+  ]
   obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
-  obj.uselib = "GIREPOSITORY GLIB"
+  obj.uselib = "GIREPOSITORY GLIB GTK GDK"
 
 def shutdown():
   if Options.commands['clean']:
