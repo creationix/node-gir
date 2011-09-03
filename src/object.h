@@ -15,6 +15,7 @@ class GIRObject : public node::ObjectWrap {
     GIRObject(GIObjectInfo *info);
     
     GObject *obj;
+    bool abstract;
     GIBaseInfo *info;
     static std::map<char*, GIObjectInfo*> objects;
     
@@ -27,13 +28,19 @@ class GIRObject : public node::ObjectWrap {
     static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetProperty(const v8::Arguments &args);
     static v8::Handle<v8::Value> SetProperty(const v8::Arguments &args);
+    static v8::Handle<v8::Value> GetInterface(const v8::Arguments &args);
+    static v8::Handle<v8::Value> GetField(const v8::Arguments &args);
 
   private:
     GIFunctionInfo *FindMethod(GIObjectInfo *inf, char *name);
     GIFunctionInfo *FindProperty(GIObjectInfo *inf, char *name);
+    GIFunctionInfo *FindInterface(GIObjectInfo *inf, char *name);
+    GIFunctionInfo *FindField(GIObjectInfo *inf, char *name);
     
     static v8::Handle<v8::Object> PropertyList(GIObjectInfo *info);
     static v8::Handle<v8::Object> MethodList(GIObjectInfo *info);
+    static v8::Handle<v8::Object> InterfaceList(GIObjectInfo *info);
+    static v8::Handle<v8::Object> FieldList(GIObjectInfo *info);
 };
 
 }
