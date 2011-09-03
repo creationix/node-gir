@@ -11,6 +11,7 @@ using namespace v8;
 namespace gir {
 
 std::map<char *, GIObjectInfo*> GIRObject::objects;
+std::map<GIObjectInfo*, Persistent<FunctionTemplate> > GIRObject::templates;
 static Persistent<String> emit_symbol;
 
 GIRObject::GIRObject(GIObjectInfo *info_) {
@@ -57,9 +58,13 @@ void GIRObject::Initialize(Handle<Object> target, GIObjectInfo *info) {
     g_base_info_ref(info);
     objects.insert(std::make_pair(name, info));
     
-    Local<FunctionTemplate> t = FunctionTemplate::New(New);
+    Local<FunctionTemplate> temp = FunctionTemplate::New(New);
+    Persistent<FunctionTemplate> t = Persistent<FunctionTemplate>::New(temp);
     t->SetClassName(String::New(name));
-    // TODO: inherit
+    templates.insert(std::make_pair(info, t));
+    
+    // dont do the inherit thing here. wait for all classes to be created and inherit in namespace loader
+    //constructor_template->Inherit(Base::constructor_template);
     
     t->InstanceTemplate()->SetInternalFieldCount(1); 
     
@@ -70,6 +75,8 @@ void GIRObject::Initialize(Handle<Object> target, GIObjectInfo *info) {
     t->Set(String::NewSymbol("__methods__"), MethodList(info));
     t->Set(String::NewSymbol("__interfaces__"), InterfaceList(info));
     t->Set(String::NewSymbol("__fields__"), FieldList(info));
+    t->Set(String::NewSymbol("__signals__"), SignalList(info));
+    t->Set(String::NewSymbol("__v_funcs__"), VFuncList(info));
     t->Set(String::NewSymbol("__abstract__"), Boolean::New(g_object_info_get_abstract(info)));
     
     int l = g_object_info_get_n_constants(info);
@@ -87,6 +94,24 @@ void GIRObject::Initialize(Handle<Object> target, GIObjectInfo *info) {
     target->Set(String::NewSymbol(name), t->GetFunction());
 }
 
+void GIRObject::Inherit(void) {
+    // this is gets called when all classes have been initialized
+    std::map<GIObjectInfo*, Persistent<FunctionTemplate> >::iterator it;
+    std::map<GIObjectInfo*, Persistent<FunctionTemplate> >::iterator temp;
+    GIObjectInfo* parent;
+    
+    for(it = templates.begin(); it != templates.end(); ++it) {
+        parent = g_object_info_get_parent(it->first);
+
+        for(temp = templates.begin(); temp != templates.end(); ++temp) {
+            if(g_base_info_equal(temp->first, parent)) {
+                //printf("inherit %s from %s\n", g_base_info_get_name(it->first), g_base_info_get_name(temp->first) );
+                it->second->Inherit(temp->second);
+            }
+        }
+    }
+}
+
 void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name) {
     HandleScope scope;
     NODE_SET_PROTOTYPE_METHOD(t, "__call__", CallMethod);
@@ -94,29 +119,8 @@ void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name) {
     NODE_SET_PROTOTYPE_METHOD(t, "__set_property__", SetProperty);
     NODE_SET_PROTOTYPE_METHOD(t, "__get_interface__", GetInterface);
     NODE_SET_PROTOTYPE_METHOD(t, "__get_field__", GetField);
-    NODE_SET_PROTOTYPE_METHOD(t, "ref", Ref);
-    NODE_SET_PROTOTYPE_METHOD(t, "unref", Unref);
-}
-
-
-Handle<Value> GIRObject::Unref(const Arguments &args) {
-    HandleScope scope;
-    
-    GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
-    //FIXME: process hangs up
-    g_object_info_get_unref_function_pointer(that->info)(that->obj);
-    
-    return scope.Close(Undefined());
-}
-
-Handle<Value> GIRObject::Ref(const Arguments &args) {
-    HandleScope scope;
-    
-    GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
-    //FIXME: process hangs up
-    g_object_info_get_ref_function_pointer(that->info)(that->obj);
-    
-    return scope.Close(Undefined());
+    NODE_SET_PROTOTYPE_METHOD(t, "__watch_signal__", WatchSignal);
+    NODE_SET_PROTOTYPE_METHOD(t, "__call_v_func__", WatchSignal);
 }
 
 Handle<Value> GIRObject::CallMethod(const Arguments &args) {
@@ -224,6 +228,48 @@ Handle<Value> GIRObject::GetField(const Arguments &args) {
     return scope.Close(Undefined());
 }
 
+Handle<Value> GIRObject::WatchSignal(const Arguments &args) {
+    HandleScope scope;
+    
+    if(args.Length() < 1 || !args[0]->IsString()) {
+        return BAD_ARGS();
+    }
+    
+    String::Utf8Value sname(args[0]);
+    GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
+    GISignalInfo *signal = that->FindSignal(that->info, *sname);
+    
+    if(signal) {
+        printf("signal %s exsists\n", *sname);
+    }
+    else {
+        printf("signal %s does NOT exsist\n", *sname);
+    }
+    
+    return scope.Close(Undefined());
+}
+
+Handle<Value> GIRObject::CallVFunc(const Arguments &args) {
+    HandleScope scope;
+    
+    if(args.Length() < 1 || !args[0]->IsString()) {
+        return BAD_ARGS();
+    }
+    
+    String::Utf8Value fname(args[0]);
+    GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
+    GISignalInfo *vfunc = that->FindSignal(that->info, *fname);
+    
+    if(vfunc) {
+        printf("VFunc %s exsists\n", *fname);
+    }
+    else {
+        printf("VFunc %s does NOT exsist\n", *fname);
+    }
+    
+    return scope.Close(Undefined());
+}
+
 GIFunctionInfo *GIRObject::FindMethod(GIObjectInfo *inf, char *name) {
     GIFunctionInfo *func = g_object_info_find_method(inf, name);
     if(!func) {
@@ -303,6 +349,30 @@ GIFieldInfo *GIRObject::FindField(GIObjectInfo *inf, char *name) {
         g_base_info_unref(parent);
     }
     return field;
+}
+
+GISignalInfo *GIRObject::FindSignal(GIObjectInfo *inf, char *name) {
+    GISignalInfo *signal = g_object_info_find_signal(inf, name);
+    if(!signal) {
+        GIObjectInfo *parent = g_object_info_get_parent(inf);
+        if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
+            signal = FindSignal(parent, name);
+        }
+        g_base_info_unref(parent);
+    }
+    return signal;
+}
+
+GIVFuncInfo *GIRObject::FindVFunc(GIObjectInfo *inf, char *name) {
+    GISignalInfo *vfunc = g_object_info_find_vfunc(inf, name);
+    if(!vfunc) {
+        GIObjectInfo *parent = g_object_info_get_parent(inf);
+        if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
+            vfunc = FindVFunc(parent, name);
+        }
+        g_base_info_unref(parent);
+    }
+    return vfunc;
 }
 
 
@@ -411,6 +481,62 @@ Handle<Object> GIRObject::FieldList(GIObjectInfo *info) {
             GIFieldInfo *field = g_object_info_get_field(info, i);
             list->Set(Number::New(i), String::New(g_base_info_get_name(field)));
             g_base_info_unref(field);
+        }
+        
+        first = false;
+    }
+    
+    return list;
+}
+
+Handle<Object> GIRObject::SignalList(GIObjectInfo *info) {
+    Handle<Object> list = Object::New();
+    bool first = true;
+    g_base_info_ref(info);
+    
+    while(true) {
+        if(!first) {
+            GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
+                return list;
+            }
+            g_base_info_unref(info);
+            info = parent;
+        }
+        
+        int l = g_object_info_get_n_signals(info);
+        for(int i=0; i<l; i++) {
+            GISignalInfo *signal = g_object_info_get_signal(info, i);
+            list->Set(Number::New(i), String::New(g_base_info_get_name(signal)));
+            g_base_info_unref(signal);
+        }
+        
+        first = false;
+    }
+    
+    return list;
+}
+
+Handle<Object> GIRObject::VFuncList(GIObjectInfo *info) {
+    Handle<Object> list = Object::New();
+    bool first = true;
+    g_base_info_ref(info);
+    
+    while(true) {
+        if(!first) {
+            GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
+                return list;
+            }
+            g_base_info_unref(info);
+            info = parent;
+        }
+        
+        int l = g_object_info_get_n_vfuncs(info);
+        for(int i=0; i<l; i++) {
+            GIVFuncInfo *vfunc = g_object_info_get_vfunc(info, i);
+            list->Set(Number::New(i), String::New(g_base_info_get_name(vfunc)));
+            g_base_info_unref(vfunc);
         }
         
         first = false;

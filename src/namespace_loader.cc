@@ -78,6 +78,9 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
         g_base_info_unref(info);
     }
     
+    // when all classes have been created we can inherit them
+    GIRObject::Inherit();
+    
     return exports;
 }
 
