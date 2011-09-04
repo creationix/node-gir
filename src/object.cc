@@ -1,5 +1,6 @@
 #include "object.h"
 #include "util.h"
+#include "value_arguments.h"
 
 #include <string.h>
 #include <node.h>
@@ -49,7 +50,7 @@ Handle<Value> GIRObject::New(const Arguments &args) {
     return args.This();
 }
 
-void GIRObject::Initialize(Handle<Object> target, GIObjectInfo *info) {
+void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
     HandleScope scope;
 
     const char *name_ = g_base_info_get_name(info);
@@ -90,11 +91,9 @@ void GIRObject::Initialize(Handle<Object> target, GIObjectInfo *info) {
     SetPrototypeMethods(t, name);
     
     emit_symbol = NODE_PSYMBOL("emit");
-    
-    target->Set(String::NewSymbol(name), t->GetFunction());
 }
 
-void GIRObject::Inherit(void) {
+void GIRObject::Initialize(Handle<Object> target) {
     // this is gets called when all classes have been initialized
     std::map<GIObjectInfo*, Persistent<FunctionTemplate> >::iterator it;
     std::map<GIObjectInfo*, Persistent<FunctionTemplate> >::iterator temp;
@@ -110,10 +109,16 @@ void GIRObject::Inherit(void) {
             }
         }
     }
+    for(it = templates.begin(); it != templates.end(); ++it) {
+        target->Set(String::NewSymbol(g_base_info_get_name(it->first)), it->second->GetFunction());
+    }
 }
 
 void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name) {
     HandleScope scope;
+    
+    NODE_SET_PROTOTYPE_METHOD(t, "test", Test);
+    
     NODE_SET_PROTOTYPE_METHOD(t, "__call__", CallMethod);
     NODE_SET_PROTOTYPE_METHOD(t, "__get_property__", GetProperty);
     NODE_SET_PROTOTYPE_METHOD(t, "__set_property__", SetProperty);
@@ -121,6 +126,53 @@ void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name) {
     NODE_SET_PROTOTYPE_METHOD(t, "__get_field__", GetField);
     NODE_SET_PROTOTYPE_METHOD(t, "__watch_signal__", WatchSignal);
     NODE_SET_PROTOTYPE_METHOD(t, "__call_v_func__", WatchSignal);
+}
+
+Handle<Value> GIRObject::Test(const Arguments &args) {
+    HandleScope scope;
+    
+    
+    GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
+    
+    /*GIFunctionInfo *func = that->FindMethod(that->info, "get_spacing");
+    if(!func) {
+        printf("no such function\n");
+        return scope.Close(Undefined());
+    }
+    GError *error = NULL;
+    GIArgument in_args[1];
+    in_args[0].v_pointer = that->obj;
+    //GIArgument out_args[1];
+    GIArgument retval;
+
+    if (!g_function_info_invoke (func, (const GIArgument*)in_args, 1, NULL, 0, &retval, &error)) {
+        printf("damn!\n");
+    }
+    else {
+        printf("hugh success (%d)\n", retval.v_int);
+    }
+    
+    */
+    /*
+    GIFunctionInfo *func = that->FindMethod(that->info, "set_name");
+    if(!func) {
+        printf("no such function\n");
+        return scope.Close(Undefined());
+    }
+    GError *error = NULL;
+    GIArgument in_args[2];
+    in_args[0].v_pointer = that->obj;
+    in_args[1].v_string = "test";
+    GIArgument retval;
+
+    if (!g_function_info_invoke (func, (const GIArgument*)in_args, 2, NULL, 0, &retval, &error)) {
+        printf("damn!\n");
+    }
+    else {
+        printf("hugh success\n");
+    }*/
+
+    return scope.Close(Undefined());
 }
 
 Handle<Value> GIRObject::CallMethod(const Arguments &args) {
@@ -135,10 +187,10 @@ Handle<Value> GIRObject::CallMethod(const Arguments &args) {
     GIFunctionInfo *func = that->FindMethod(that->info, *fname);
     
     if(func) {
-        printf("method %s exsists\n", *fname);
+        return scope.Close(ValueToArgs::CallFunc(that->obj, func, args));
     }
     else {
-        printf("method %s does NOT exsist\n", *fname);
+        return EXCEPTION("no such method");
     }
     
     return scope.Close(Undefined());

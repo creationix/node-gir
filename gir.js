@@ -12,7 +12,11 @@ gtk.HBox.__interfaces__;
 gtk.HBox.__fields__;
 var w = new gtk.HBox();
 
-w.__call__("function_name");
+console.log(w.__call__("get_spacing"));
+console.log(w.__call__("set_spacing", 22));
+console.log(w.__call__("get_spacing"));
+
+/*
 w.__get_property__("property_name");
 w.__get_interface__("Buildable");
 w.__get_field__("name");
@@ -20,14 +24,7 @@ w.__get_field__("name");
 var x = new gtk.HBox();
 console.log(x.__watch_signal__("show"));
 console.log(x instanceof gtk.HBox);
-console.log(x instanceof gtk.Object);
+console.log(x instanceof gtk.Box);
 
-for(var k in x) {
-    console.log(k + ":" + x[k]);
-}
-
-// FIXME: see object.cc
-/*
-w.ref();
-w.unref();
+//console.log(gtk.HBox.__methods__);
 */

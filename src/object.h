@@ -21,10 +21,12 @@ class GIRObject : public node::ObjectWrap {
     static std::map<GIObjectInfo*, v8::Persistent<v8::FunctionTemplate> > templates;
     
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
-    static void Initialize(v8::Handle<v8::Object> target, GIObjectInfo *info);
+    static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
     static void SetPrototypeMethods(v8::Handle<v8::FunctionTemplate> t, char *name);
     
-    static void Inherit(void);
+    static void Initialize(v8::Handle<v8::Object> target);
+    
+    static v8::Handle<v8::Value> Test(const v8::Arguments &args);
     
     static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetProperty(const v8::Arguments &args);

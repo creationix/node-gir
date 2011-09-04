@@ -23,6 +23,7 @@ def build(bld):
   obj.source = [
     "src/init.cc",
     "src/namespace_loader.cc",
+    "src/value_arguments.cc",
     "src/object.cc"
   ]
   obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]

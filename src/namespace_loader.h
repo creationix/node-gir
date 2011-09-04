@@ -23,7 +23,6 @@ class NamespaceLoader {
     static void ParseStruct(GIStructInfo *info, v8::Handle<v8::Object> &exports);
     static void ParseEnum(GIEnumInfo *info, v8::Handle<v8::Object> &exports);
     static void ParseFlags(GIEnumInfo *info, v8::Handle<v8::Object> &exports);
-    static void ParseObject(GIObjectInfo *info, v8::Handle<v8::Object> &exports);
     static void ParseInterface(GIInterfaceInfo *info, v8::Handle<v8::Object> &exports);
     static void ParseUnion(GIUnionInfo *info, v8::Handle<v8::Object> &exports);
     

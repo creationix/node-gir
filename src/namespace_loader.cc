@@ -64,7 +64,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 ParseFlags((GIEnumInfo*)info, exports);
                 break;
             case GI_INFO_TYPE_OBJECT:
-                ParseObject((GIObjectInfo*)info, exports);
+                GIRObject::Prepare(exports, (GIObjectInfo*)info);
                 break;
             case GI_INFO_TYPE_INTERFACE:
                 ParseInterface((GIInterfaceInfo*)info, exports);
@@ -79,7 +79,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
     }
     
     // when all classes have been created we can inherit them
-    GIRObject::Inherit();
+    GIRObject::Initialize(exports);
     
     return exports;
 }
@@ -108,11 +108,6 @@ void NamespaceLoader::ParseFlags(GIEnumInfo *info, Handle<Object> &exports) {
         obj->Set(String::New(g_base_info_get_name(value)), Number::New(i));
     }
     exports->Set(String::New(g_base_info_get_name(info)), obj);
-}
-
-void NamespaceLoader::ParseObject(GIObjectInfo *info, Handle<Object> &exports) {
-    //printf("%s\n", g_type_name(g_registered_type_info_get_g_type(info)) );
-    GIRObject::Initialize(exports, info);
 }
 
 void NamespaceLoader::ParseInterface(GIInterfaceInfo *info, Handle<Object> &exports) {
