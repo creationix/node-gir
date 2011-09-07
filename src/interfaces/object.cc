@@ -5,15 +5,14 @@
 
 #include <string.h>
 #include <node.h>
-#include <gtk/gtk.h>
-#include <gdk/gdk.h>
 
 using namespace v8;
 
 namespace gir {
 
-std::map<char *, GIObjectInfo*> GIRObject::objects;
-std::map<GIObjectInfo*, Persistent<FunctionTemplate> > GIRObject::templates;
+void empty_func(void) {};
+
+std::vector<ObjectFunctionTemplate> GIRObject::templates;
 static Persistent<String> emit_symbol;
 
 GIRObject::GIRObject(GIObjectInfo *info_) {
@@ -24,7 +23,6 @@ void GIRObject::constructor(GIObjectInfo *info_) {
     info = info_;
     GType t = g_registered_type_info_get_g_type(info);
     
-    // FIXME: some types dont work (GTK_TYPE_WINDOW, GTK_TYPE_MENU)
     abstract = g_object_info_get_abstract(info);
     if(abstract) {
         obj = NULL;
@@ -37,15 +35,22 @@ void GIRObject::constructor(GIObjectInfo *info_) {
 
 Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_) {
     // find the function template
+    if(obj_ == NULL || !G_IS_OBJECT(obj_)) {
+        return Null();
+    }
+    
+    // very interesting: gtk.Winodw with a child. child.get_parent_window() returns a GIObjetInfo with name GdkWindow (Namespace GDK!)
+    // printf("type is %s\n", g_type_name(g_registered_type_info_get_g_type(info_)));
+    
     const char *name = g_base_info_get_name(info_);
     
     Handle<Value> arg = Boolean::New(false);
     
-    std::map<GIObjectInfo*, Persistent<FunctionTemplate> >::iterator it;
+    std::vector<ObjectFunctionTemplate>::iterator it;
     for(it = templates.begin(); it != templates.end(); ++it) {
     
-        if(g_base_info_equal(info_, it->first)) {
-            Handle<Value> res = it->second->GetFunction()->NewInstance(1, &arg);
+        if(g_base_info_equal(info_, it->info)) {
+            Handle<Value> res = it->function->GetFunction()->NewInstance(1, &arg);
             if(!res.IsEmpty()) {
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
                 e->info = info_;
@@ -53,28 +58,28 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_) {
                 
                 return res;
             }
-            return Null();
+            break;
         }
-        
     }
+    return Null();
 }
 
 Handle<Value> GIRObject::New(GIPropertyInfo *prop) {
+    // FIXME: the whole function sucks...
     GIObjectInfo *info_ = g_type_info_get_interface(g_property_info_get_type(prop));
     Handle<Value> arg = Boolean::New(false);
     
-    std::map<GIObjectInfo*, Persistent<FunctionTemplate> >::iterator it;
+    std::vector<ObjectFunctionTemplate>::iterator it;
     for(it = templates.begin(); it != templates.end(); ++it) {
-        if(g_base_info_equal(info_, it->first)) {
-            Handle<Value> res = it->second->GetFunction()->NewInstance(1, &arg);
+        if(g_base_info_equal(info_, it->info)) {
+            Handle<Value> res = it->function->GetFunction()->NewInstance(1, &arg);
             if(!res.IsEmpty()) {
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
-                // FIXME: WHY DOENT IT WORK?!
+                // FIXME: WHY DOES IT NOT WORK?!
                 //e->constructor(info);
                 e->info = info_;
                 GType t = g_registered_type_info_get_g_type(info_);
                 
-                // FIXME: some types dont work (GTK_TYPE_WINDOW, GTK_TYPE_MENU)
                 e->abstract = g_object_info_get_abstract(info_);
                 if(e->abstract) {
                     e->obj = NULL;
@@ -90,6 +95,10 @@ Handle<Value> GIRObject::New(GIPropertyInfo *prop) {
     }
 }
 
+Handle<Value> GIRObject::New(GType t) {
+    return Null();
+}
+
 Handle<Value> GIRObject::New(const Arguments &args) {
 
     if(args.Length() == 1 && args[0]->IsBoolean() && !args[0]->IsTrue()) {
@@ -99,12 +108,13 @@ Handle<Value> GIRObject::New(const Arguments &args) {
     }
 
     String::AsciiValue className( args.This()->Get( String::New("__classname__")) );
-    std::map<char *, GIObjectInfo*>::iterator it;
+    std::vector<ObjectFunctionTemplate>::iterator it;
     
     GIObjectInfo *info = NULL;
-    for(it = objects.begin(); it != objects.end(); ++it) {
-        if(strcmp(it->first, *className) == 0) {
-            info = it->second;
+    for(it = templates.begin(); it != templates.end(); ++it) {
+        if(strcmp(it->type_name, *className) == 0) {
+            info = it->info;
+            break;
         }
     }
     if(info == NULL) {
@@ -113,7 +123,6 @@ Handle<Value> GIRObject::New(const Arguments &args) {
     
     GIRObject *obj = new GIRObject(info);
     obj->Wrap(args.This());
-    return args.This();
 }
 
 void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
@@ -123,15 +132,17 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
     char *name = new char[strlen(name_)];
     strcpy(name, name_);
     g_base_info_ref(info);
-    objects.insert(std::make_pair(name, info));
     
     Local<FunctionTemplate> temp = FunctionTemplate::New(New);
     Persistent<FunctionTemplate> t = Persistent<FunctionTemplate>::New(temp);
     t->SetClassName(String::New(name));
-    templates.insert(std::make_pair(info, t));
     
-    // dont do the inherit thing here. wait for all classes to be created and inherit in namespace loader
-    //constructor_template->Inherit(Base::constructor_template);
+    ObjectFunctionTemplate oft;
+    oft.type_name = name;
+    oft.info = info;
+    oft.function = t;
+    
+    templates.push_back(oft);
     
     t->InstanceTemplate()->SetInternalFieldCount(1); 
     
@@ -155,29 +166,28 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
     
     
     SetPrototypeMethods(t, name);
-    
-    emit_symbol = NODE_PSYMBOL("emit");
 }
 
 void GIRObject::Initialize(Handle<Object> target) {
-    // this is gets called when all classes have been initialized
-    std::map<GIObjectInfo*, Persistent<FunctionTemplate> >::iterator it;
-    std::map<GIObjectInfo*, Persistent<FunctionTemplate> >::iterator temp;
+    // this gets called when all classes have been initialized
+    std::vector<ObjectFunctionTemplate>::iterator it;
+    std::vector<ObjectFunctionTemplate>::iterator temp;
     GIObjectInfo* parent;
     
     for(it = templates.begin(); it != templates.end(); ++it) {
-        parent = g_object_info_get_parent(it->first);
+        parent = g_object_info_get_parent(it->info);
 
         for(temp = templates.begin(); temp != templates.end(); ++temp) {
-            if(g_base_info_equal(temp->first, parent)) {
-                //printf("inherit %s from %s\n", g_base_info_get_name(it->first), g_base_info_get_name(temp->first) );
-                it->second->Inherit(temp->second);
+            if(g_base_info_equal(temp->info, parent)) {
+                it->function->Inherit(temp->function);
             }
         }
     }
     for(it = templates.begin(); it != templates.end(); ++it) {
-        target->Set(String::NewSymbol(g_base_info_get_name(it->first)), it->second->GetFunction());
+        target->Set(String::NewSymbol(g_base_info_get_name(it->info)), it->function->GetFunction());
     }
+    
+    emit_symbol = NODE_PSYMBOL("emit");
 }
 
 void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name) {
@@ -190,6 +200,38 @@ void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name) {
     NODE_SET_PROTOTYPE_METHOD(t, "__get_field__", GetField);
     NODE_SET_PROTOTYPE_METHOD(t, "__watch_signal__", WatchSignal);
     NODE_SET_PROTOTYPE_METHOD(t, "__call_v_func__", CallMethod);
+}
+
+void GIRObject::Emit(Handle<Value> argv[], int length) {
+    HandleScope scope;
+    
+    // this will do the magic but dont forget to extend this object in JS from require("events").EventEmitter
+    Local<Value> emit_v = handle_->Get(emit_symbol);
+    if (!emit_v->IsFunction()) return;
+    Local<Function> emit = Local<Function>::Cast(emit_v);
+    emit->Call(handle_, length, argv);
+}
+
+
+void GIRObject::SignalCallback(GClosure *closure,
+  GValue *return_value,
+  guint n_param_values,
+  const GValue *param_values,
+  gpointer invocation_hint,
+  gpointer marshal_data) {
+    
+    // FIXME: when we emit, we cannot change return_value!
+    MarshalData *data = (MarshalData*)marshal_data;
+    
+    Handle<Value> args[n_param_values+1];
+    args[0] = String::New(data->event_name);
+    
+    for(int i=0; i<n_param_values; i++) {
+        GValue p = param_values[i];
+        args[i+1] = GIRValue::FromGValue(&p);
+    }
+    
+    data->that->Emit(args, n_param_values+1);
 }
 
 
@@ -238,7 +280,7 @@ Handle<Value> GIRObject::GetProperty(const Arguments &args) {
     g_value_init(&gvalue, spec->value_type);
     g_object_get_property(G_OBJECT(that->obj), *propname, &gvalue);
     
-    return scope.Close(GIRValue::FromGValue(&gvalue, prop));
+    return scope.Close(GIRValue::FromGValue(&gvalue));
 }
 
 Handle<Value> GIRObject::SetProperty(const Arguments &args) {
@@ -318,16 +360,27 @@ Handle<Value> GIRObject::WatchSignal(const Arguments &args) {
     if(args.Length() < 1 || !args[0]->IsString()) {
         return BAD_ARGS();
     }
+    bool after = true;
+    if(args.Length() > 1 && args[1]->IsBoolean()) {
+        after = args[1]->ToBoolean()->IsTrue();
+    }
     
     String::Utf8Value sname(args[0]);
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
     GISignalInfo *signal = that->FindSignal(that->info, *sname);
     
     if(signal) {
-        printf("signal %s exsists\n", *sname);
+        MarshalData *data = new MarshalData();
+        data->that = that;
+        data->event_name = new char[strlen(*sname)];
+        strcpy(data->event_name, *sname);
+        
+        GClosure *closure = g_cclosure_new(G_CALLBACK(empty_func), NULL, NULL);
+        g_closure_set_meta_marshal(closure, data, GIRObject::SignalCallback);
+        g_signal_connect_closure(that->obj, *sname, closure, after);
     }
     else {
-        printf("signal %s does NOT exsist\n", *sname);
+        EXCEPTION("no such signal");
     }
     
     return scope.Close(Undefined());

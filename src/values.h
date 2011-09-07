@@ -10,7 +10,7 @@ namespace gir {
 
 class GIRValue {
   public:
-    static v8::Handle<v8::Value> FromGValue(GValue *v, GIPropertyInfo *info);
+    static v8::Handle<v8::Value> FromGValue(GValue *v);
     static bool ToGValue(v8::Handle<v8::Value> value, GType t, GValue *v);
 };
 

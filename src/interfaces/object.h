@@ -1,7 +1,7 @@
 #include <v8.h>
 #include <node_object_wrap.h>
 
-#include <map>
+#include <vector>
 #include <glib.h>
 #include <girepository.h>
 
@@ -9,6 +9,19 @@
 #define GIR_OBJECT_INTERFACE_H
 
 namespace gir {
+
+class GIRObject;
+
+struct ObjectFunctionTemplate {
+    char *type_name;
+    GIObjectInfo *info;
+    v8::Persistent<v8::FunctionTemplate> function;
+};
+
+struct MarshalData {
+    GIRObject *that;
+    char *event_name;
+};
 
 class GIRObject : public node::ObjectWrap {
   public:
@@ -20,11 +33,12 @@ class GIRObject : public node::ObjectWrap {
     GObject *obj;
     bool abstract;
     GIBaseInfo *info;
-    static std::map<char*, GIObjectInfo*> objects;
-    static std::map<GIObjectInfo*, v8::Persistent<v8::FunctionTemplate> > templates;
+    
+    static std::vector<ObjectFunctionTemplate> templates;
     
     static v8::Handle<v8::Value> New(GObject *obj, GIObjectInfo *info);
     static v8::Handle<v8::Value> New(GIPropertyInfo *prop_);
+    static v8::Handle<v8::Value> New(GType t);
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
     static void SetPrototypeMethods(v8::Handle<v8::FunctionTemplate> t, char *name);
@@ -38,6 +52,14 @@ class GIRObject : public node::ObjectWrap {
     static v8::Handle<v8::Value> GetField(const v8::Arguments &args);
     static v8::Handle<v8::Value> WatchSignal(const v8::Arguments &args);
     static v8::Handle<v8::Value> CallVFunc(const v8::Arguments &args);
+    
+    static void SignalCallback(GClosure *closure,
+        GValue *return_value,
+        guint n_param_values,
+        const GValue *param_values,
+        gpointer invocation_hint,
+        gpointer marshal_data);
+    void Emit(v8::Handle<v8::Value> argv[], int length);
 
   private:
     GIFunctionInfo *FindMethod(GIObjectInfo *inf, char *name);

@@ -7,9 +7,10 @@ using namespace v8;
 
 namespace gir {
 
-Handle<Value> GIRValue::FromGValue(GValue *v, GIPropertyInfo *info) {
+Handle<Value> GIRValue::FromGValue(GValue *v) {
+    printf("from gvalue type %s\n", g_type_name(G_VALUE_TYPE(v)));
     GType type = G_VALUE_TYPE(v);
-    Handle<Value> value;
+    Handle<Value> value = Undefined();
     
     if(g_type_is_a(type, G_TYPE_CHAR)) {
         char *str = new char[2];
@@ -71,10 +72,7 @@ Handle<Value> GIRValue::FromGValue(GValue *v, GIPropertyInfo *info) {
     
     }
     else if(g_type_is_a(type, G_TYPE_OBJECT)) {
-        value = GIRObject::New(info);
-    }
-    else {
-        value = Undefined();
+        //value = GIRObject::New(info);
     }
     return value;
 }
