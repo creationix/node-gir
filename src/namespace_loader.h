@@ -12,6 +12,7 @@ class NamespaceLoader {
   public:
     static GIRepository *repo;
     static std::map<char *, GITypelib*> type_libs;
+    static char *active_namespace;
     
     static void Initialize(v8::Handle<v8::Object> target);
     static v8::Handle<v8::Value> Load(const v8::Arguments &args);
@@ -25,6 +26,7 @@ class NamespaceLoader {
     static void ParseFlags(GIEnumInfo *info, v8::Handle<v8::Object> &exports);
     static void ParseInterface(GIInterfaceInfo *info, v8::Handle<v8::Object> &exports);
     static void ParseUnion(GIUnionInfo *info, v8::Handle<v8::Object> &exports);
+    static void ParseFunction(GIFunctionInfo *info, v8::Handle<v8::Object> &exports);
     
 };
 

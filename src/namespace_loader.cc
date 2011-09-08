@@ -1,6 +1,10 @@
 #include "namespace_loader.h"
 #include "util.h"
-#include "object.h"
+
+#include "interfaces/object.h"
+#include "interfaces/function.h"
+
+#include <string.h>
 
 using namespace v8;
 
@@ -8,6 +12,7 @@ namespace gir {
 
 GIRepository *NamespaceLoader::repo = NULL;
 std::map<char *, GITypelib*> NamespaceLoader::type_libs;
+char *NamespaceLoader::active_namespace;
 
 void NamespaceLoader::Initialize(Handle<Object> target) {
     GIR_SET_METHOD(target, "load", NamespaceLoader::Load);
@@ -39,6 +44,9 @@ Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_) {
     if(!lib) {
         return EXCEPTION(er->message);
     }
+    active_namespace = new char[strlen(namespace_)];
+    strcpy(active_namespace, namespace_);
+    
     type_libs.insert(std::make_pair(namespace_, lib));
     
     return BuildClasses(namespace_);
@@ -72,6 +80,8 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
             case GI_INFO_TYPE_UNION:
                 ParseUnion((GIUnionInfo*)info, exports);
                 break;
+            case GI_INFO_TYPE_FUNCTION:
+                GIRFunction::Initialize(exports, (GIFunctionInfo*)info);
         }
         
         

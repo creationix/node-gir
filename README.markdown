@@ -93,3 +93,25 @@ that use it.  I'll know more as we progress.
  - Keep the same constructor style used by Seed and GJS
  - Make the module system as node-like as possible.
 
+## Things which work
+
+ - All classes get created
+ - classes get inherited
+ - A class has lists of all its properties, methods, signals, vfuncs and fields
+ - You can create a class
+ - functions can be called (but it does not work so well)
+ - property values can be set/get
+ - events can be watched
+ - flags, enums etc are set
+
+## Things which dont work (correct)
+
+ - Conversion between a v8 value and a GValue/GArgument is veeeery buggy (but everything needs it so most things are buggy)
+ - The API is inconsistent (classes just have \_\_call\_method\_\_, \_\_get\_prroperty\_\_ etc
+   but the namespace has all methods [ gst.main(), gst.mainQuit()]
+ - No support for libev/libuv; glib is using its own stuff (gst.main())
+ - There is no good way to delete an object (memory management sucks at all)
+ - You can't pass construction parameters to g_object_new
+ - Only the GObject type is implementet yet (left are GIInterfaceInfo and GIStructInfo)
+ - The interfaces directory has a wrong name (should be reg_types or sth. like that)
+ - atm you can only load a single namespace

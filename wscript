@@ -23,8 +23,11 @@ def build(bld):
   obj.source = [
     "src/init.cc",
     "src/namespace_loader.cc",
-    "src/value_arguments.cc",
-    "src/object.cc"
+    "src/arguments.cc",
+    "src/function.cc",
+    "src/values.cc",
+    "src/interfaces/object.cc",
+    "src/interfaces/function.cc"
   ]
   obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
   obj.uselib = "GIREPOSITORY GLIB GTK GDK"
