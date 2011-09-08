@@ -124,7 +124,7 @@ Handle<Value> GIRObject::New(const Arguments &args) {
     return args.This();
 }
 
-void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
+void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespace_) {
     HandleScope scope;
 
     const char *name_ = g_base_info_get_name(info);
@@ -141,6 +141,7 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
     oft.info = info;
     oft.function = t;
     oft.type = g_registered_type_info_get_g_type(info);
+    oft.namespace_ = namespace_;
     
     templates.push_back(oft);
     
@@ -168,13 +169,16 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
     SetPrototypeMethods(t, name);
 }
 
-void GIRObject::Initialize(Handle<Object> target) {
+void GIRObject::Initialize(Handle<Object> target, char *namespace_) {
     // this gets called when all classes have been initialized
     std::vector<ObjectFunctionTemplate>::iterator it;
     std::vector<ObjectFunctionTemplate>::iterator temp;
     GIObjectInfo* parent;
     
     for(it = templates.begin(); it != templates.end(); ++it) {
+        if(strcmp(it->namespace_, namespace_) != 0) {
+            continue;
+        }
         parent = g_object_info_get_parent(it->info);
 
         for(temp = templates.begin(); temp != templates.end(); ++temp) {
@@ -184,7 +188,9 @@ void GIRObject::Initialize(Handle<Object> target) {
         }
     }
     for(it = templates.begin(); it != templates.end(); ++it) {
-        target->Set(String::NewSymbol(g_base_info_get_name(it->info)), it->function->GetFunction());
+        if(strcmp(it->namespace_, namespace_) == 0) {
+            target->Set(String::NewSymbol(g_base_info_get_name(it->info)), it->function->GetFunction());
+        }
     }
     
     emit_symbol = NODE_PSYMBOL("emit");

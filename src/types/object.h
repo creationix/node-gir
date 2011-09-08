@@ -17,6 +17,7 @@ struct ObjectFunctionTemplate {
     GIObjectInfo *info;
     v8::Persistent<v8::FunctionTemplate> function;
     GType type;
+    char *namespace_;
 };
 
 struct MarshalData {
@@ -46,10 +47,10 @@ class GIRObject : public node::ObjectWrap {
     static v8::Handle<v8::Value> New(GObject *obj, GType t);
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     
-    static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
+    static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info, char *namespace_);
     static void SetPrototypeMethods(v8::Handle<v8::FunctionTemplate> t, char *name);
     
-    static void Initialize(v8::Handle<v8::Object> target);
+    static void Initialize(v8::Handle<v8::Object> target, char *namespace_);
     
     static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetProperty(const v8::Arguments &args);

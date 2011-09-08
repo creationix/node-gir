@@ -1,7 +1,7 @@
 #include "arguments.h"
 #include "util.h"
 
-#include "interfaces/object.h"
+#include "types/object.h"
 #include <string.h>
 
 #include <vector>

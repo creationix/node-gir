@@ -1,7 +1,7 @@
 #include "values.h"
 #include "util.h"
 
-#include "interfaces/object.h"
+#include "types/object.h"
 
 using namespace v8;
 
