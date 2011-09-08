@@ -1,32 +1,55 @@
 #include <v8.h>
 #include <node_object_wrap.h>
 
-#include <map>
+#include <vector>
 #include <glib.h>
 #include <girepository.h>
 
-#ifndef GIR_OBJECT_H
-#define GIR_OBJECT_H
+#ifndef GIR_OBJECT_INTERFACE_H
+#define GIR_OBJECT_INTERFACE_H
 
 namespace gir {
 
+class GIRObject;
+
+struct ObjectFunctionTemplate {
+    char *type_name;
+    GIObjectInfo *info;
+    v8::Persistent<v8::FunctionTemplate> function;
+    GType type;
+};
+
+struct MarshalData {
+    GIRObject *that;
+    char *event_name;
+};
+
+struct InstanceData {
+    v8::Persistent<v8::Value> instance;
+    GIRObject *obj;
+};
+
+
 class GIRObject : public node::ObjectWrap {
   public:
-    GIRObject(GIObjectInfo *info);
+    GIRObject() {};
+    GIRObject(GIObjectInfo *info_);
     
     GObject *obj;
     bool abstract;
     GIBaseInfo *info;
-    static std::map<char*, GIObjectInfo*> objects;
-    static std::map<GIObjectInfo*, v8::Persistent<v8::FunctionTemplate> > templates;
     
+    static std::vector<InstanceData> instances;
+    static std::vector<ObjectFunctionTemplate> templates;
+    
+    static v8::Handle<v8::Value> New(GObject *obj, GIObjectInfo *info);
+    static v8::Handle<v8::Value> New(GObject *obj, GType t);
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
+    
     static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
     static void SetPrototypeMethods(v8::Handle<v8::FunctionTemplate> t, char *name);
     
     static void Initialize(v8::Handle<v8::Object> target);
-    
-    static v8::Handle<v8::Value> Test(const v8::Arguments &args);
     
     static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetProperty(const v8::Arguments &args);
@@ -35,6 +58,18 @@ class GIRObject : public node::ObjectWrap {
     static v8::Handle<v8::Value> GetField(const v8::Arguments &args);
     static v8::Handle<v8::Value> WatchSignal(const v8::Arguments &args);
     static v8::Handle<v8::Value> CallVFunc(const v8::Arguments &args);
+    
+    static void PushInstance(GIRObject *obj, v8::Handle<v8::Value>);
+    static v8::Handle<v8::Value> GetInstance(GObject *obj);
+    
+    static void SignalFinalize(gpointer data, GClosure *c);
+    static void SignalCallback(GClosure *closure,
+        GValue *return_value,
+        guint n_param_values,
+        const GValue *param_values,
+        gpointer invocation_hint,
+        gpointer marshal_data);
+    v8::Handle<v8::Value> Emit(v8::Handle<v8::Value> argv[], int length);
 
   private:
     GIFunctionInfo *FindMethod(GIObjectInfo *inf, char *name);
