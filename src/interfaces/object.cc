@@ -202,14 +202,14 @@ void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name) {
     NODE_SET_PROTOTYPE_METHOD(t, "__call_v_func__", CallMethod);
 }
 
-void GIRObject::Emit(Handle<Value> argv[], int length) {
+Handle<Value> GIRObject::Emit(Handle<Value> argv[], int length) {
     HandleScope scope;
     
     // this will do the magic but dont forget to extend this object in JS from require("events").EventEmitter
     Local<Value> emit_v = handle_->Get(emit_symbol);
-    if (!emit_v->IsFunction()) return;
+    if (!emit_v->IsFunction()) return Null();
     Local<Function> emit = Local<Function>::Cast(emit_v);
-    emit->Call(handle_, length, argv);
+    return emit->Call(handle_, length, argv);
 }
 
 
@@ -220,7 +220,6 @@ void GIRObject::SignalCallback(GClosure *closure,
   gpointer invocation_hint,
   gpointer marshal_data) {
     
-    // FIXME: when we emit, we cannot change return_value!
     MarshalData *data = (MarshalData*)marshal_data;
     
     Handle<Value> args[n_param_values+1];
@@ -231,7 +230,16 @@ void GIRObject::SignalCallback(GClosure *closure,
         args[i+1] = GIRValue::FromGValue(&p);
     }
     
-    data->that->Emit(args, n_param_values+1);
+    Handle<Value> res = data->that->Emit(args, n_param_values+1);
+    if(res != Null()) {
+        //GIRValue::ToGValue(res, return_value);
+    }
+}
+
+void GIRObject::SignalFinalize(gpointer marshal_data, GClosure *c) {
+    MarshalData *data = (MarshalData*)marshal_data;
+    delete[] data->event_name;
+    delete[] data;
 }
 
 
@@ -376,6 +384,7 @@ Handle<Value> GIRObject::WatchSignal(const Arguments &args) {
         strcpy(data->event_name, *sname);
         
         GClosure *closure = g_cclosure_new(G_CALLBACK(empty_func), NULL, NULL);
+        g_closure_add_finalize_notifier(closure, data, GIRObject::SignalFinalize);
         g_closure_set_meta_marshal(closure, data, GIRObject::SignalCallback);
         g_signal_connect_closure(that->obj, *sname, closure, after);
     }
@@ -517,6 +526,7 @@ GIVFuncInfo *GIRObject::FindVFunc(GIObjectInfo *inf, char *name) {
 Handle<Object> GIRObject::PropertyList(GIObjectInfo *info) {
     Handle<Object> list = Object::New();
     bool first = true;
+    int gcounter = 0;
     g_base_info_ref(info);
     
     while(true) {
@@ -532,10 +542,10 @@ Handle<Object> GIRObject::PropertyList(GIObjectInfo *info) {
         int l = g_object_info_get_n_properties(info);
         for(int i=0; i<l; i++) {
             GIPropertyInfo *prop = g_object_info_get_property(info, i);
-            list->Set(Number::New(i), String::New(g_base_info_get_name(prop)));
+            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(prop)));
             g_base_info_unref(prop);
         }
-        
+        gcounter += l;
         first = false;
     }
     
@@ -545,6 +555,7 @@ Handle<Object> GIRObject::PropertyList(GIObjectInfo *info) {
 Handle<Object> GIRObject::MethodList(GIObjectInfo *info) {
     Handle<Object> list = Object::New();
     bool first = true;
+    int gcounter = 0;
     g_base_info_ref(info);
     
     while(true) {
@@ -560,10 +571,10 @@ Handle<Object> GIRObject::MethodList(GIObjectInfo *info) {
         int l = g_object_info_get_n_methods(info);
         for(int i=0; i<l; i++) {
             GIFunctionInfo *func = g_object_info_get_method(info, i);
-            list->Set(Number::New(i), String::New(g_base_info_get_name(func)));
+            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(func)));
             g_base_info_unref(func);
         }
-        
+        gcounter += l;
         first = false;
     }
     
@@ -573,6 +584,7 @@ Handle<Object> GIRObject::MethodList(GIObjectInfo *info) {
 Handle<Object> GIRObject::InterfaceList(GIObjectInfo *info) {
     Handle<Object> list = Object::New();
     bool first = true;
+    int gcounter = 0;
     g_base_info_ref(info);
     
     while(true) {
@@ -588,10 +600,10 @@ Handle<Object> GIRObject::InterfaceList(GIObjectInfo *info) {
         int l = g_object_info_get_n_interfaces(info);
         for(int i=0; i<l; i++) {
             GIInterfaceInfo *interface = g_object_info_get_interface(info, i);
-            list->Set(Number::New(i), String::New(g_base_info_get_name(interface)));
+            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(interface)));
             g_base_info_unref(interface);
         }
-        
+        gcounter += l;
         first = false;
     }
     
@@ -601,6 +613,7 @@ Handle<Object> GIRObject::InterfaceList(GIObjectInfo *info) {
 Handle<Object> GIRObject::FieldList(GIObjectInfo *info) {
     Handle<Object> list = Object::New();
     bool first = true;
+    int gcounter = 0;
     g_base_info_ref(info);
     
     while(true) {
@@ -616,10 +629,10 @@ Handle<Object> GIRObject::FieldList(GIObjectInfo *info) {
         int l = g_object_info_get_n_fields(info);
         for(int i=0; i<l; i++) {
             GIFieldInfo *field = g_object_info_get_field(info, i);
-            list->Set(Number::New(i), String::New(g_base_info_get_name(field)));
+            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(field)));
             g_base_info_unref(field);
         }
-        
+        gcounter += l;
         first = false;
     }
     
@@ -629,12 +642,13 @@ Handle<Object> GIRObject::FieldList(GIObjectInfo *info) {
 Handle<Object> GIRObject::SignalList(GIObjectInfo *info) {
     Handle<Object> list = Object::New();
     bool first = true;
+    int gcounter = 0;
     g_base_info_ref(info);
     
     while(true) {
         if(!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
-            if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
+            if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info)/*"InitiallyUnowned"*/ ) == 0) {
                 return list;
             }
             g_base_info_unref(info);
@@ -644,10 +658,10 @@ Handle<Object> GIRObject::SignalList(GIObjectInfo *info) {
         int l = g_object_info_get_n_signals(info);
         for(int i=0; i<l; i++) {
             GISignalInfo *signal = g_object_info_get_signal(info, i);
-            list->Set(Number::New(i), String::New(g_base_info_get_name(signal)));
+            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(signal)));
             g_base_info_unref(signal);
         }
-        
+        gcounter += l;
         first = false;
     }
     
@@ -657,6 +671,7 @@ Handle<Object> GIRObject::SignalList(GIObjectInfo *info) {
 Handle<Object> GIRObject::VFuncList(GIObjectInfo *info) {
     Handle<Object> list = Object::New();
     bool first = true;
+    int gcounter = 0;
     g_base_info_ref(info);
     
     while(true) {
@@ -672,10 +687,10 @@ Handle<Object> GIRObject::VFuncList(GIObjectInfo *info) {
         int l = g_object_info_get_n_vfuncs(info);
         for(int i=0; i<l; i++) {
             GIVFuncInfo *vfunc = g_object_info_get_vfunc(info, i);
-            list->Set(Number::New(i), String::New(g_base_info_get_name(vfunc)));
+            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(vfunc)));
             g_base_info_unref(vfunc);
         }
-        
+        gcounter += l;
         first = false;
     }
     

@@ -80,6 +80,8 @@ Handle<Value> GIRValue::FromGValue(GValue *v) {
 bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
     g_value_init(v, type);
     
+    // FIXME dont use type to identiry which type value has. Use v8's methods.
+    
     if(g_type_is_a(type, G_TYPE_INTERFACE)) {
         if(g_type_is_a(type, G_TYPE_OBJECT)) {
             if(/* has instance */ true) {

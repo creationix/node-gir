@@ -53,13 +53,14 @@ class GIRObject : public node::ObjectWrap {
     static v8::Handle<v8::Value> WatchSignal(const v8::Arguments &args);
     static v8::Handle<v8::Value> CallVFunc(const v8::Arguments &args);
     
+    static void SignalFinalize(gpointer data, GClosure *c);
     static void SignalCallback(GClosure *closure,
         GValue *return_value,
         guint n_param_values,
         const GValue *param_values,
         gpointer invocation_hint,
         gpointer marshal_data);
-    void Emit(v8::Handle<v8::Value> argv[], int length);
+    v8::Handle<v8::Value> Emit(v8::Handle<v8::Value> argv[], int length);
 
   private:
     GIFunctionInfo *FindMethod(GIObjectInfo *inf, char *name);
