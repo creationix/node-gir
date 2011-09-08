@@ -120,11 +120,11 @@ console.log(gtk.Button.__signals__);
 button.__watch_signal__("clicked");
 
 win.on("destroy", function() {
-    console.log("destroyed", arguments);
+    console.log("destroyed", arguments[0] instanceof gtk.Window);
     gtk.mainQuit();
 });
 button.on("clicked", function() {
-    console.log("click :)", arguments);
+    console.log("click :)", arguments[0] instanceof gtk.Button, arguments[0] == button);
 });
 
 gtk.main();

@@ -13,13 +13,10 @@ namespace gir {
 void empty_func(void) {};
 
 std::vector<ObjectFunctionTemplate> GIRObject::templates;
+std::vector<InstanceData> GIRObject::instances;
 static Persistent<String> emit_symbol;
 
 GIRObject::GIRObject(GIObjectInfo *info_) {
-    constructor(info_);
-}
-
-void GIRObject::constructor(GIObjectInfo *info_) {
     info = info_;
     GType t = g_registered_type_info_get_g_type(info);
     
@@ -42,19 +39,23 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_) {
     // very interesting: gtk.Winodw with a child. child.get_parent_window() returns a GIObjetInfo with name GdkWindow (Namespace GDK!)
     // printf("type is %s\n", g_type_name(g_registered_type_info_get_g_type(info_)));
     
-    const char *name = g_base_info_get_name(info_);
+    Handle<Value> res = GetInstance(obj_);
+    if(res != Null()) {
+        return res;
+    }
     
     Handle<Value> arg = Boolean::New(false);
-    
     std::vector<ObjectFunctionTemplate>::iterator it;
+    
     for(it = templates.begin(); it != templates.end(); ++it) {
     
         if(g_base_info_equal(info_, it->info)) {
-            Handle<Value> res = it->function->GetFunction()->NewInstance(1, &arg);
+            res = it->function->GetFunction()->NewInstance(1, &arg);
             if(!res.IsEmpty()) {
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
                 e->info = info_;
                 e->obj = obj_;
+                e->abstract = false;
                 
                 return res;
             }
@@ -64,30 +65,27 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_) {
     return Null();
 }
 
-Handle<Value> GIRObject::New(GIPropertyInfo *prop) {
-    // FIXME: the whole function sucks...
-    GIObjectInfo *info_ = g_type_info_get_interface(g_property_info_get_type(prop));
-    Handle<Value> arg = Boolean::New(false);
+Handle<Value> GIRObject::New(GObject *obj_, GType t) {
+    if(obj_ == NULL || !G_IS_OBJECT(obj_)) {
+        return Null();
+    }
     
+    Handle<Value> res = GetInstance(obj_);
+    if(res != Null()) {
+        return res;
+    }
+    
+    Handle<Value> arg = Boolean::New(false);
     std::vector<ObjectFunctionTemplate>::iterator it;
+    
     for(it = templates.begin(); it != templates.end(); ++it) {
-        if(g_base_info_equal(info_, it->info)) {
-            Handle<Value> res = it->function->GetFunction()->NewInstance(1, &arg);
+        if(t == it->type) {
+            res = it->function->GetFunction()->NewInstance(1, &arg);
             if(!res.IsEmpty()) {
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
-                // FIXME: WHY DOES IT NOT WORK?!
-                //e->constructor(info);
-                e->info = info_;
-                GType t = g_registered_type_info_get_g_type(info_);
-                
-                e->abstract = g_object_info_get_abstract(info_);
-                if(e->abstract) {
-                    e->obj = NULL;
-                }
-                else {
-                    // gobject va_list, to allow construction parameters
-                    e->obj = G_OBJECT(g_object_new(t, NULL));
-                }
+                e->info = it->info;
+                e->obj = obj_;
+                e->abstract = false;
                 return res;
             }
             return Null();
@@ -95,15 +93,13 @@ Handle<Value> GIRObject::New(GIPropertyInfo *prop) {
     }
 }
 
-Handle<Value> GIRObject::New(GType t) {
-    return Null();
-}
-
 Handle<Value> GIRObject::New(const Arguments &args) {
 
     if(args.Length() == 1 && args[0]->IsBoolean() && !args[0]->IsTrue()) {
         GIRObject *obj = new GIRObject();
         obj->Wrap(args.This());
+        PushInstance(obj, args.This());
+        
         return args.This();
     }
 
@@ -123,6 +119,9 @@ Handle<Value> GIRObject::New(const Arguments &args) {
     
     GIRObject *obj = new GIRObject(info);
     obj->Wrap(args.This());
+    PushInstance(obj, args.This());
+    
+    return args.This();
 }
 
 void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
@@ -141,6 +140,7 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) {
     oft.type_name = name;
     oft.info = info;
     oft.function = t;
+    oft.type = g_registered_type_info_get_g_type(info);
     
     templates.push_back(oft);
     
@@ -212,6 +212,25 @@ Handle<Value> GIRObject::Emit(Handle<Value> argv[], int length) {
     return emit->Call(handle_, length, argv);
 }
 
+void GIRObject::PushInstance(GIRObject *obj, Handle<Value> value) {
+    Persistent<Object> p_value = Persistent<Object>::New(value->ToObject());
+    obj->MakeWeak();
+    
+    InstanceData data;
+    data.obj = obj;
+    data.instance = p_value;
+    instances.push_back(data);
+}
+
+Handle<Value> GIRObject::GetInstance(GObject *obj) {
+    std::vector<InstanceData>::iterator it;
+    for(it = instances.begin(); it != instances.end(); it++) {
+        if(it->obj && it->obj->obj && it->obj->obj == obj) {
+            return it->instance;
+        }
+    }
+    return Null();
+}
 
 void GIRObject::SignalCallback(GClosure *closure,
   GValue *return_value,

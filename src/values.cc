@@ -8,7 +8,6 @@ using namespace v8;
 namespace gir {
 
 Handle<Value> GIRValue::FromGValue(GValue *v) {
-    printf("from gvalue type %s\n", g_type_name(G_VALUE_TYPE(v)));
     GType type = G_VALUE_TYPE(v);
     Handle<Value> value = Undefined();
     
@@ -72,7 +71,7 @@ Handle<Value> GIRValue::FromGValue(GValue *v) {
     
     }
     else if(g_type_is_a(type, G_TYPE_OBJECT)) {
-        //value = GIRObject::New(info);
+        value = GIRObject::New(G_OBJECT(g_value_get_object(v)), type);
     }
     return value;
 }
