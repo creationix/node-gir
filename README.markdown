@@ -107,7 +107,7 @@ that use it.  I'll know more as we progress.
 ## Things which dont work (correct)
 
  - Conversion between a v8 value and a GValue/GArgument is veeeery buggy (but everything needs it so most things are buggy)
- - The API is inconsistent (classes just have \_\_call_method\_\_, \_\_get_prroperty\_\_ etc
+ - The API is inconsistent (classes just have \_\_call\_method\_\_, \_\_get\_prroperty\_\_ etc
    but the namespace has all methods [ gst.main(), gst.mainQuit()]
  - No support for libev/libuv; glib is using its own stuff (gst.main())
  - There is no good way to delete an object (memory management sucks at all)
