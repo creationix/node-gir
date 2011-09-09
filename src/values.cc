@@ -77,9 +77,14 @@ Handle<Value> GIRValue::FromGValue(GValue *v) {
 }
 
 bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
-    g_value_init(v, type);
+    if(type == G_TYPE_INVALID || type == 0) {
+        type = GIRValue::GuessType(value);
+    }
+    if(type == 0) {
+        return false;
+    }
     
-    // FIXME dont use type to identiry which type value has. Use v8's methods.
+    g_value_init(v, type);
     
     if(g_type_is_a(type, G_TYPE_INTERFACE)) {
         if(g_type_is_a(type, G_TYPE_OBJECT)) {
@@ -203,6 +208,28 @@ bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
     
     }
     return false;
+}
+
+GType GIRValue::GuessType(Handle<Value> value) {
+    if(value->IsString()) {
+        return G_TYPE_STRING;
+    }
+    else if(value->IsArray()) {
+        return G_TYPE_ARRAY;
+    }
+    else if(value->IsBoolean()) {
+        return G_TYPE_BOOLEAN;
+    }
+    else if(value->IsInt32()) {
+        return G_TYPE_INT;
+    }
+    else if(value->IsUint32()) {
+        return G_TYPE_UINT;
+    }
+    else if(value->IsNumber()) {
+        return G_TYPE_DOUBLE;
+    }
+    return G_TYPE_INVALID;
 }
 
 }

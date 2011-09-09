@@ -1,6 +1,6 @@
 var gtk = require("./gtk");
 
-gtk.init(0, null);
+gtk.init(0);
 
 
 var win = new gtk.Window();
@@ -30,5 +30,8 @@ win.on("destroy", function() {
 button.on("clicked", function() {
     console.log("click :)", arguments[0] instanceof gtk.Button, arguments[0] == button);
 });
+
+console.log(win.__call__("set_property", "name", "test"));
+console.log(win.__get_property__("name"));
 
 gtk.main();

@@ -1,5 +1,6 @@
 #include "arguments.h"
 #include "util.h"
+#include "values.h"
 
 #include "types/object.h"
 #include <string.h>
@@ -14,7 +15,8 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
     GITypeInfo *type = g_arg_info_get_type(info);
     GITypeTag tag = ReplaceGType(g_type_info_get_tag(type));
     
-    if(v == Null() && g_arg_info_may_be_null(info) ||
+    
+    if( ( v == Null() || v == Undefined() ) && g_arg_info_may_be_null(info) ||
         tag == GI_TYPE_TAG_VOID) {
         arg->v_pointer = NULL;
         return true;
@@ -196,15 +198,43 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
         return false;
     }
     if(tag == GI_TYPE_TAG_INTERFACE) {
-        if(!v->IsObject()) { return false; }
-            
         GIBaseInfo *interface_info = g_type_info_get_interface(type);
         g_assert(interface_info != NULL);
         GIInfoType interface_type = g_base_info_get_type(interface_info);
+        
+        GType gtype;
+        switch(interface_type) {
+            case GI_INFO_TYPE_STRUCT:
+            case GI_INFO_TYPE_ENUM:
+            case GI_INFO_TYPE_OBJECT:
+            case GI_INFO_TYPE_INTERFACE:
+            case GI_INFO_TYPE_UNION:
+            case GI_INFO_TYPE_BOXED:
+                gtype = g_registered_type_info_get_g_type
+                    ((GIRegisteredTypeInfo*)interface_info);
+                break;
+            case GI_INFO_TYPE_VALUE:
+                gtype = G_TYPE_VALUE;
+                break;
 
-        if(interface_type == GI_INFO_TYPE_OBJECT) {
+            default:
+                gtype = G_TYPE_NONE;
+                break;
+        }
+
+        if(g_type_is_a(gtype, G_TYPE_OBJECT)) {
+            if(!v->IsObject()) { return false; }
             GIRObject *gir_object = node::ObjectWrap::Unwrap<GIRObject>(v->ToObject());
             arg->v_pointer = gir_object->obj;
+            return true;
+        }
+        if(g_type_is_a(gtype, G_TYPE_VALUE)) {
+            GValue gvalue = {0,};
+            if(!GIRValue::ToGValue(v, G_TYPE_INVALID, &gvalue)) {
+                return false;
+            }
+            arg->v_pointer = g_boxed_copy(G_TYPE_VALUE, &gvalue);
+            g_value_unset(&gvalue);
             return true;
         }
     }
@@ -222,6 +252,39 @@ Handle<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type) {
         
         if(interface_type == GI_INFO_TYPE_OBJECT) {
             return GIRObject::New(G_OBJECT(arg->v_pointer), interface_info);
+        }
+    }
+    
+    if(tag == GI_TYPE_TAG_INTERFACE) {
+        GIBaseInfo *interface_info = g_type_info_get_interface(type);
+        g_assert(interface_info != NULL);
+        GIInfoType interface_type = g_base_info_get_type(interface_info);
+        
+        GType gtype;
+        switch(interface_type) {
+            case GI_INFO_TYPE_STRUCT:
+            case GI_INFO_TYPE_ENUM:
+            case GI_INFO_TYPE_OBJECT:
+            case GI_INFO_TYPE_INTERFACE:
+            case GI_INFO_TYPE_UNION:
+            case GI_INFO_TYPE_BOXED:
+                gtype = g_registered_type_info_get_g_type
+                    ((GIRegisteredTypeInfo*)interface_info);
+                break;
+            case GI_INFO_TYPE_VALUE:
+                gtype = G_TYPE_VALUE;
+                break;
+
+            default:
+                gtype = G_TYPE_NONE;
+                break;
+        }
+        
+        if(g_type_is_a(gtype, G_TYPE_OBJECT)) {
+            return GIRObject::New(G_OBJECT(arg->v_pointer), interface_info);
+        }
+        if(g_type_is_a(gtype, G_TYPE_VALUE)) {
+            GIRValue::FromGValue((GValue*)arg->v_pointer);
         }
     }
     

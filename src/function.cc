@@ -28,7 +28,6 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
             out_args_c++;
         }
         else {
-            printf("%s is inout\n", g_base_info_get_name(arg));
             out_args_c++;
             in_args_c++;
         }
@@ -37,10 +36,6 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
     
     GIArgument in_args[in_args_c];
     GIArgument out_args[out_args_c];
-    
-    if(args.Length()-offset_ < l) {
-        return EXCEPTION("too few arguments");
-    }
     
     int in_c = offset_, out_c = 0;
     for(int i=0; i<l; i++) {
