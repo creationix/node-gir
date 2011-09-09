@@ -551,7 +551,7 @@ Handle<Object> GIRObject::PropertyList(GIObjectInfo *info) {
     while(true) {
         if(!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
-            if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
+            if(parent && strcmp(g_base_info_get_name(parent), g_base_info_get_name(info)) == 0) {
                 return list;
             }
             g_base_info_unref(info);
