@@ -19,7 +19,7 @@ class NamespaceLoader {
     static v8::Handle<v8::Value> SearchPath(const v8::Arguments &args);
 
   private:
-    static v8::Handle<v8::Value> LoadNamespace(char *namespace_);
+    static v8::Handle<v8::Value> LoadNamespace(char *namespace_, char *version);
     static v8::Handle<v8::Value> BuildClasses(char *namespace_);
     
     static void ParseStruct(GIStructInfo *info, v8::Handle<v8::Object> &exports);

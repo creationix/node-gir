@@ -28,19 +28,28 @@ Handle<Value> NamespaceLoader::Load(const Arguments &args) {
         EXCEPTION("argument has to be a string");
     }
     
+    Handle<Value> exports;
     String::Utf8Value namespace_(args[0]);
-    Handle<Value> exports = NamespaceLoader::LoadNamespace(*namespace_);
+    
+    if(args.Length() > 1 && args[1]->IsString()) {
+        String::Utf8Value version(args[1]);
+        exports = NamespaceLoader::LoadNamespace(*namespace_, *version);
+    }
+    else {
+        exports = NamespaceLoader::LoadNamespace(*namespace_, NULL);
+    }
+    
     
     return scope.Close(exports);
 }
 
-Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_) {
+Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_, char *version) {
     if(!repo) {
         repo = g_irepository_get_default();
     }
     
     GError *er = NULL;
-    GITypelib *lib = g_irepository_require(repo, namespace_, NULL, (GIRepositoryLoadFlags)0, &er);
+    GITypelib *lib = g_irepository_require(repo, namespace_, version, (GIRepositoryLoadFlags)0, &er);
     if(!lib) {
         return EXCEPTION(er->message);
     }

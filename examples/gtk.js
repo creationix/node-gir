@@ -3,7 +3,7 @@ var gir = require("../gir"),
 
 gir.init();
 
-var gtk = exports.gtk = gir.load("Gtk");
+var gtk = exports.gtk = gir.load("Gtk", "2.0");
 
 extend(true, gtk.Object.prototype, EventEmitter.prototype);
 
