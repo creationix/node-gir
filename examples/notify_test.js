@@ -1,5 +1,6 @@
 var notify = require("./notify");
-notify.init("ich");
+
+console.log(notify.init("ich"));
 
 var n = new notify.Notification();
-n.__call__("new", "1", "2", "3");
+//n.__call__("new", "1", "2", "3");

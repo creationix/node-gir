@@ -16,7 +16,7 @@ std::vector<ObjectFunctionTemplate> GIRObject::templates;
 std::vector<InstanceData> GIRObject::instances;
 static Persistent<String> emit_symbol;
 
-GIRObject::GIRObject(GIObjectInfo *info_) {
+GIRObject::GIRObject(GIObjectInfo *info_, int n_params, GParameter *parameters) {
     info = info_;
     GType t = g_registered_type_info_get_g_type(info);
     
@@ -26,7 +26,7 @@ GIRObject::GIRObject(GIObjectInfo *info_) {
     }
     else {
         // gobject va_list, to allow construction parameters
-        obj = G_OBJECT(g_object_new(t, NULL));
+        obj = G_OBJECT(g_object_newv(t, n_params, parameters));
     }
 }
 
@@ -94,13 +94,14 @@ Handle<Value> GIRObject::New(GObject *obj_, GType t) {
 }
 
 Handle<Value> GIRObject::New(const Arguments &args) {
-
+    HandleScope scope;
+    
     if(args.Length() == 1 && args[0]->IsBoolean() && !args[0]->IsTrue()) {
         GIRObject *obj = new GIRObject();
         obj->Wrap(args.This());
         PushInstance(obj, args.This());
         
-        return args.This();
+        return scope.Close(args.This());
     }
 
     String::AsciiValue className( args.This()->Get( String::New("__classname__")) );
@@ -114,14 +115,67 @@ Handle<Value> GIRObject::New(const Arguments &args) {
         }
     }
     if(info == NULL) {
-        return Null();
+        return EXCEPTION("no such class. __calssname__ may be incorrect");
     }
     
-    GIRObject *obj = new GIRObject(info);
+    int length = 0;
+    GParameter *params;
+    if(!ToParams(args[0], &params, &length, info)) {
+        return BAD_ARGS();
+    }
+    
+    GIRObject *obj = new GIRObject(info, length, params);
+    DeleteParams(params, length);
+    
     obj->Wrap(args.This());
     PushInstance(obj, args.This());
     
-    return args.This();
+    return scope.Close(args.This());
+}
+
+bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GIObjectInfo *info) {
+    *length = 0;
+    *params = NULL;
+    if(!val->IsObject()) {
+        return true;
+    }
+    Handle<Object> obj = val->ToObject();
+    
+    Handle<Array> props = obj->GetPropertyNames();
+    *length = props->Length();
+    *params = new GParameter[*length];
+    for(int i=0; i<*length; i++) {
+        String::Utf8Value key(props->Get(i)->ToString());
+        
+        char *name = new char[*length+1];
+        strcpy(name, *key);
+        
+        if(!FindProperty(info, name)) {
+            delete[] name;
+            DeleteParams(*params, (*length)-1);
+            return false;
+        }
+        
+        GValue gvalue = {0,};
+        if(!GIRValue::ToGValue(obj->Get(props->Get(i)), G_TYPE_INVALID, &gvalue)) {
+            delete[] name;
+            DeleteParams(*params, (*length)-1);
+            return false;
+        }
+        
+        (*params)[i].name = name;
+        (*params)[i].value = gvalue;
+    }
+    
+    return true;
+}
+
+void GIRObject::DeleteParams(GParameter* params, int l) {
+    for(int i=0; i<l; i++) {
+        delete[] params[i].name;
+        g_value_unset(&params[i].value);
+    }
+    delete[] params;
 }
 
 void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespace_) {

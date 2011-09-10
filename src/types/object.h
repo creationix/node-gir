@@ -34,7 +34,7 @@ struct InstanceData {
 class GIRObject : public node::ObjectWrap {
   public:
     GIRObject() {};
-    GIRObject(GIObjectInfo *info_);
+    GIRObject(GIObjectInfo *info_, int n_params, GParameter *parameters);
     
     GObject *obj;
     bool abstract;
@@ -73,12 +73,12 @@ class GIRObject : public node::ObjectWrap {
     v8::Handle<v8::Value> Emit(v8::Handle<v8::Value> argv[], int length);
 
   private:
-    GIFunctionInfo *FindMethod(GIObjectInfo *inf, char *name);
-    GIFunctionInfo *FindProperty(GIObjectInfo *inf, char *name);
-    GIFunctionInfo *FindInterface(GIObjectInfo *inf, char *name);
-    GIFunctionInfo *FindField(GIObjectInfo *inf, char *name);
-    GIFunctionInfo *FindSignal(GIObjectInfo *inf, char *name);
-    GIFunctionInfo *FindVFunc(GIObjectInfo *inf, char *name);
+    static GIFunctionInfo *FindMethod(GIObjectInfo *inf, char *name);
+    static GIFunctionInfo *FindProperty(GIObjectInfo *inf, char *name);
+    static GIFunctionInfo *FindInterface(GIObjectInfo *inf, char *name);
+    static GIFunctionInfo *FindField(GIObjectInfo *inf, char *name);
+    static GIFunctionInfo *FindSignal(GIObjectInfo *inf, char *name);
+    static GIFunctionInfo *FindVFunc(GIObjectInfo *inf, char *name);
     
     static v8::Handle<v8::Object> PropertyList(GIObjectInfo *info);
     static v8::Handle<v8::Object> MethodList(GIObjectInfo *info);
@@ -86,6 +86,9 @@ class GIRObject : public node::ObjectWrap {
     static v8::Handle<v8::Object> FieldList(GIObjectInfo *info);
     static v8::Handle<v8::Object> SignalList(GIObjectInfo *info);
     static v8::Handle<v8::Object> VFuncList(GIObjectInfo *info);
+    
+    static bool ToParams(v8::Handle<v8::Value> val, GParameter** p, int *length, GIObjectInfo *info);
+    static void DeleteParams(GParameter* params, int length);
 };
 
 }

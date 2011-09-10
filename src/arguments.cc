@@ -140,7 +140,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
         char *str = new char[v->ToString()->Length()];
         strcpy(str, *v8str);
         
-        arg->v_pointer = str;
+        arg->v_string = str;
         return true;
     }
     if(tag == GI_TYPE_TAG_GLIST) {

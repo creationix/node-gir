@@ -20,11 +20,9 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         GIArgInfo *arg = g_callable_info_get_arg(info, i);
         GIDirection dir = g_arg_info_get_direction(arg);
         if(dir == GI_DIRECTION_IN) {
-            printf("%s is in; is return value %d\n", g_base_info_get_name(arg), g_arg_info_is_caller_allocates(arg));
             in_args_c++;
         }
         else if(dir == GI_DIRECTION_OUT) {
-            printf("%s is out\n", g_base_info_get_name(arg));
             out_args_c++;
         }
         else {
@@ -33,6 +31,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         }
         g_base_info_unref(arg);
     }
+    printf("in_args_c is %d, out_args_c is %d, offest ist %d\n", in_args_c, out_args_c, offset_);
     
     GIArgument in_args[in_args_c];
     GIArgument out_args[out_args_c];
