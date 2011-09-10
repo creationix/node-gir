@@ -137,6 +137,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
     if(tag == GI_TYPE_TAG_UTF8 || tag == GI_TYPE_TAG_FILENAME) {
         if(!v->IsString()) { return false; }
         String::Utf8Value v8str(v->ToString());
+        // FIXME: I've to free this somewhere
         char *str = new char[v->ToString()->Length()];
         strcpy(str, *v8str);
         
@@ -233,6 +234,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
             if(!GIRValue::ToGValue(v, G_TYPE_INVALID, &gvalue)) {
                 return false;
             }
+            //FIXME I've to free this somewhere
             arg->v_pointer = g_boxed_copy(G_TYPE_VALUE, &gvalue);
             g_value_unset(&gvalue);
             return true;

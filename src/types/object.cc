@@ -181,9 +181,7 @@ void GIRObject::DeleteParams(GParameter* params, int l) {
 void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespace_) {
     HandleScope scope;
 
-    const char *name_ = g_base_info_get_name(info);
-    char *name = new char[strlen(name_)];
-    strcpy(name, name_);
+    char *name = (char*)g_base_info_get_name(info);
     g_base_info_ref(info);
     
     Local<FunctionTemplate> temp = FunctionTemplate::New(New);
@@ -367,7 +365,10 @@ Handle<Value> GIRObject::GetProperty(const Arguments &args) {
     g_value_init(&gvalue, spec->value_type);
     g_object_get_property(G_OBJECT(that->obj), *propname, &gvalue);
     
-    return scope.Close(GIRValue::FromGValue(&gvalue));
+    Handle<Value> res = GIRValue::FromGValue(&gvalue);
+    g_value_unset(&gvalue);
+    
+    return scope.Close(res);
 }
 
 Handle<Value> GIRObject::SetProperty(const Arguments &args) {

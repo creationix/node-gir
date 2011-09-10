@@ -58,7 +58,9 @@ Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_, char *version) {
     
     type_libs.insert(std::make_pair(namespace_, lib));
     
-    return BuildClasses(active_namespace);
+    Handle<Value> res = BuildClasses(active_namespace);
+    delete[] active_namespace;
+    return res;
 }
 
 Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {

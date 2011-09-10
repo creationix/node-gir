@@ -86,6 +86,8 @@ Handle<Value> GIRFunction::Execute(const Arguments &args) {
     }
     
     GIFunctionInfo *func = g_irepository_find_by_name(NamespaceLoader::repo, ns, fn);
+    delete[] ns;
+    delete[] fn;
     
     if(func) {
         return scope.Close(Func::Call(NULL, func, args));
