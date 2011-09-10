@@ -55,7 +55,9 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         g_base_info_unref(arg);
     }
     
-    in_args[0].v_pointer = obj;
+    if(obj != NULL) {
+        in_args[0].v_pointer = obj;
+    }
     
     GError *error = NULL;
     GIArgument retval;
