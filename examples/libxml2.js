@@ -5,7 +5,6 @@ gir.init();
 
 var libxml2 = exports.gtk = gir.load("libxml2");
 console.log(libxml2);
-libxml2.dummy();
 
 //extend(true, libxml2.Object.prototype, EventEmitter.prototype);
 

@@ -228,10 +228,10 @@ void GIRObject::Initialize(Handle<Object> target, char *namespace_) {
     GIObjectInfo* parent;
     
     for(it = templates.begin(); it != templates.end(); ++it) {
-        if(strcmp(it->namespace_, namespace_) != 0) {
+        parent = g_object_info_get_parent(it->info);
+        if(strcmp(it->namespace_, namespace_) != 0 || !parent) {
             continue;
         }
-        parent = g_object_info_get_parent(it->info);
 
         for(temp = templates.begin(); temp != templates.end(); ++temp) {
             if(g_base_info_equal(temp->info, parent)) {
@@ -612,7 +612,10 @@ Handle<Object> GIRObject::PropertyList(GIObjectInfo *info) {
     while(true) {
         if(!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
-            if(parent && strcmp(g_base_info_get_name(parent), g_base_info_get_name(info)) == 0) {
+            if(!parent) {
+                return list;
+            }
+            if(strcmp(g_base_info_get_name(parent), g_base_info_get_name(info)) == 0) {
                 return list;
             }
             g_base_info_unref(info);
@@ -641,6 +644,9 @@ Handle<Object> GIRObject::MethodList(GIObjectInfo *info) {
     while(true) {
         if(!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(!parent) {
+                return list;
+            }
             if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
                 return list;
             }
@@ -670,6 +676,9 @@ Handle<Object> GIRObject::InterfaceList(GIObjectInfo *info) {
     while(true) {
         if(!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(!parent) {
+                return list;
+            }
             if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
                 return list;
             }
@@ -699,6 +708,9 @@ Handle<Object> GIRObject::FieldList(GIObjectInfo *info) {
     while(true) {
         if(!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(!parent) {
+                return list;
+            }
             if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
                 return list;
             }
@@ -728,6 +740,9 @@ Handle<Object> GIRObject::SignalList(GIObjectInfo *info) {
     while(true) {
         if(!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(!parent) {
+                return list;
+            }
             if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info)/*"InitiallyUnowned"*/ ) == 0) {
                 return list;
             }
@@ -757,6 +772,9 @@ Handle<Object> GIRObject::VFuncList(GIObjectInfo *info) {
     while(true) {
         if(!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(!parent) {
+                return list;
+            }
             if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
                 return list;
             }

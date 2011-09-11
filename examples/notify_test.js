@@ -3,4 +3,10 @@ var notify = require("./notify");
 console.log(notify.init("ich"));
 
 var n = new notify.Notification();
-//n.__call__("new", "1", "2", "3");
+var created = n.__call__("new", "a", "a", "a", "a");
+
+for(var k in n) {
+    console.log(k);
+}
+
+console.log(notify.Notification.__methods__);

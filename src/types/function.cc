@@ -14,7 +14,7 @@ namespace gir {
 
 /*
 FIXME: this is reeeealy ugly. we should find onother way to find the namespace and function name.
-
+       and/or even consider if we just create a __call__ function like we do in object.cc
 */
 
 
