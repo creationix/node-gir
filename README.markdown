@@ -112,6 +112,5 @@ that use it.  I'll know more as we progress.
  - No support for libev/libuv; glib is using its own stuff (gst.main())
  - There is no good way to delete an object (memory management sucks at all)
  - You can't pass construction parameters to g_object_new
- - Only the GObject type is implementet yet (left are GIInterfaceInfo and GIStructInfo)
- - The interfaces directory has a wrong name (should be reg_types or sth. like that)
- - atm you can only load a single namespace
+ - Only the GObject and Function type is implementet yet (left are GIInterfaceInfo and GIStructInfo)
+ - types/function.cc need a rewrite

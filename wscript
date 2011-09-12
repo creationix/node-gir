@@ -26,8 +26,8 @@ def build(bld):
     "src/arguments.cc",
     "src/function.cc",
     "src/values.cc",
-    "src/interfaces/object.cc",
-    "src/interfaces/function.cc"
+    "src/types/object.cc",
+    "src/types/function.cc"
   ]
   obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
   obj.uselib = "GIREPOSITORY GLIB GTK GDK"

@@ -9,6 +9,13 @@ using namespace v8;
 namespace gir {
 
 Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &args) {
+
+    if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
+        // rly not sure about this
+        printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
+        obj = NULL;
+    }
+    
     int offset_ = 0;
     if(obj != NULL) {
         offset_ = 1;
@@ -20,27 +27,22 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         GIArgInfo *arg = g_callable_info_get_arg(info, i);
         GIDirection dir = g_arg_info_get_direction(arg);
         if(dir == GI_DIRECTION_IN) {
-            printf("%s is in; is return value %d\n", g_base_info_get_name(arg), g_arg_info_is_caller_allocates(arg));
             in_args_c++;
         }
         else if(dir == GI_DIRECTION_OUT) {
-            printf("%s is out\n", g_base_info_get_name(arg));
             out_args_c++;
         }
         else {
-            printf("%s is inout\n", g_base_info_get_name(arg));
             out_args_c++;
             in_args_c++;
         }
+        printf("%s %s\n", g_type_tag_to_string(g_type_info_get_tag(g_arg_info_get_type(arg))), g_base_info_get_name(arg));
         g_base_info_unref(arg);
     }
+    printf("in_args_c is %d, out_args_c is %d, offest ist %d\n", in_args_c, out_args_c, offset_);
     
     GIArgument in_args[in_args_c];
     GIArgument out_args[out_args_c];
-    
-    if(args.Length()-offset_ < l) {
-        return EXCEPTION("too few arguments");
-    }
     
     int in_c = offset_, out_c = 0;
     for(int i=0; i<l; i++) {
@@ -61,7 +63,9 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         g_base_info_unref(arg);
     }
     
-    in_args[0].v_pointer = obj;
+    if(obj != NULL) {
+        in_args[0].v_pointer = obj;
+    }
     
     GError *error = NULL;
     GIArgument retval;

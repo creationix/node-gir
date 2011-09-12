@@ -1,8 +1,8 @@
 #include "namespace_loader.h"
 #include "util.h"
 
-#include "interfaces/object.h"
-#include "interfaces/function.h"
+#include "types/object.h"
+#include "types/function.h"
 
 #include <string.h>
 
@@ -12,10 +12,10 @@ namespace gir {
 
 GIRepository *NamespaceLoader::repo = NULL;
 std::map<char *, GITypelib*> NamespaceLoader::type_libs;
-char *NamespaceLoader::active_namespace;
 
 void NamespaceLoader::Initialize(Handle<Object> target) {
     GIR_SET_METHOD(target, "load", NamespaceLoader::Load);
+    GIR_SET_METHOD(target, "search_path", NamespaceLoader::SearchPath);
 }
 
 Handle<Value> NamespaceLoader::Load(const Arguments &args) {
@@ -28,28 +28,39 @@ Handle<Value> NamespaceLoader::Load(const Arguments &args) {
         EXCEPTION("argument has to be a string");
     }
     
+    Handle<Value> exports;
     String::Utf8Value namespace_(args[0]);
-    Handle<Value> exports = NamespaceLoader::LoadNamespace(*namespace_);
+    
+    if(args.Length() > 1 && args[1]->IsString()) {
+        String::Utf8Value version(args[1]);
+        exports = NamespaceLoader::LoadNamespace(*namespace_, *version);
+    }
+    else {
+        exports = NamespaceLoader::LoadNamespace(*namespace_, NULL);
+    }
+    
     
     return scope.Close(exports);
 }
 
-Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_) {
+Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_, char *version) {
     if(!repo) {
         repo = g_irepository_get_default();
     }
     
     GError *er = NULL;
-    GITypelib *lib = g_irepository_require(repo, namespace_, NULL, (GIRepositoryLoadFlags)0, &er);
+    GITypelib *lib = g_irepository_require(repo, namespace_, version, (GIRepositoryLoadFlags)0, &er);
     if(!lib) {
         return EXCEPTION(er->message);
     }
-    active_namespace = new char[strlen(namespace_)];
+    char *active_namespace = new char[strlen(namespace_)];
     strcpy(active_namespace, namespace_);
     
     type_libs.insert(std::make_pair(namespace_, lib));
     
-    return BuildClasses(namespace_);
+    Handle<Value> res = BuildClasses(active_namespace);
+    delete[] active_namespace;
+    return res;
 }
 
 Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
@@ -72,7 +83,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 ParseFlags((GIEnumInfo*)info, exports);
                 break;
             case GI_INFO_TYPE_OBJECT:
-                GIRObject::Prepare(exports, (GIObjectInfo*)info);
+                GIRObject::Prepare(exports, (GIObjectInfo*)info, namespace_);
                 break;
             case GI_INFO_TYPE_INTERFACE:
                 ParseInterface((GIInterfaceInfo*)info, exports);
@@ -81,7 +92,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 ParseUnion((GIUnionInfo*)info, exports);
                 break;
             case GI_INFO_TYPE_FUNCTION:
-                GIRFunction::Initialize(exports, (GIFunctionInfo*)info);
+                GIRFunction::Initialize(exports, (GIFunctionInfo*)info, namespace_);
         }
         
         
@@ -89,7 +100,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
     }
     
     // when all classes have been created we can inherit them
-    GIRObject::Initialize(exports);
+    GIRObject::Initialize(exports, namespace_);
     
     return exports;
 }
@@ -126,6 +137,24 @@ void NamespaceLoader::ParseInterface(GIInterfaceInfo *info, Handle<Object> &expo
 
 void NamespaceLoader::ParseUnion(GIUnionInfo *info, Handle<Object> &exports) {
 
+}
+
+Handle<Value> NamespaceLoader::SearchPath(const Arguments &args) {
+    HandleScope scope;
+    
+    if(!repo) {
+        repo = g_irepository_get_default();
+    }
+    GSList *ls = g_irepository_get_search_path();
+    int l = g_slist_length(ls);
+    Handle<Array> res = Array::New(l);
+    
+    for(int i=0; i<l; i++) {
+        gpointer p = g_slist_nth_data(ls, i);
+        res->Set(Number::New(i), String::New((gchar*)p));
+    }
+    
+    return scope.Close(res);
 }
 
 
