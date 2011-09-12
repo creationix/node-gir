@@ -12,13 +12,14 @@ class NamespaceLoader {
   public:
     static GIRepository *repo;
     static std::map<char *, GITypelib*> type_libs;
-    static char *active_namespace;
     
     static void Initialize(v8::Handle<v8::Object> target);
     static v8::Handle<v8::Value> Load(const v8::Arguments &args);
+    
+    static v8::Handle<v8::Value> SearchPath(const v8::Arguments &args);
 
   private:
-    static v8::Handle<v8::Value> LoadNamespace(char *namespace_);
+    static v8::Handle<v8::Value> LoadNamespace(char *namespace_, char *version);
     static v8::Handle<v8::Value> BuildClasses(char *namespace_);
     
     static void ParseStruct(GIStructInfo *info, v8::Handle<v8::Object> &exports);
