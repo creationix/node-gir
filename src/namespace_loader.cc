@@ -15,7 +15,12 @@ std::map<char *, GITypelib*> NamespaceLoader::type_libs;
 
 void NamespaceLoader::Initialize(Handle<Object> target) {
     GIR_SET_METHOD(target, "load", NamespaceLoader::Load);
-    GIR_SET_METHOD(target, "search_path", NamespaceLoader::SearchPath);
+    GIR_SET_METHOD(target, "searchPath", NamespaceLoader::SearchPath);
+    GIR_SET_METHOD(target, "isRegistered", NamespaceLoader::IsRegistered);
+    GIR_SET_METHOD(target, "getDependencies", NamespaceLoader::GetDependencies);
+    GIR_SET_METHOD(target, "loadedNamespaces", NamespaceLoader::LoadedNamespaces);
+    GIR_SET_METHOD(target, "getVersion", NamespaceLoader::GetVersion);
+    GIR_SET_METHOD(target, "getVersions", NamespaceLoader::GetVersions);
 }
 
 Handle<Value> NamespaceLoader::Load(const Arguments &args) {
@@ -152,6 +157,116 @@ Handle<Value> NamespaceLoader::SearchPath(const Arguments &args) {
     for(int i=0; i<l; i++) {
         gpointer p = g_slist_nth_data(ls, i);
         res->Set(Number::New(i), String::New((gchar*)p));
+    }
+    
+    return scope.Close(res);
+}
+
+Handle<Value> NamespaceLoader::IsRegistered(const Arguments &args) {
+    HandleScope scope;
+    
+    if(!repo) {
+        repo = g_irepository_get_default();
+    }
+    
+    if(args.Length() < 1 || !args[0]->IsString()) {
+        return BAD_ARGS();
+    }
+    
+    String::Utf8Value namespace_(args[0]->ToString());
+    char *version = NULL;
+    
+    if(args.Length() > 1 && args[1]->IsString()) {
+        String::Utf8Value version_(args[1]);
+        version = *version_;
+    }
+    
+    return scope.Close(Boolean::New(g_irepository_is_registered(repo, *namespace_, version)));
+}
+
+Handle<Value> NamespaceLoader::GetDependencies(const Arguments &args) {
+    HandleScope scope;
+    
+    if(!repo) {
+        repo = g_irepository_get_default();
+    }
+    
+    if(args.Length() < 1 || !args[0]->IsString()) {
+        return BAD_ARGS();
+    }
+    
+    String::Utf8Value namespace_(args[0]->ToString());
+    
+    char **versions = g_irepository_get_dependencies(repo, *namespace_);
+    
+    int size = 0;
+    while(versions[size] != NULL) { size++; }
+    
+    Handle<Array> res = Array::New(size);
+    for(int i=0; versions[i] != NULL; i++) {
+        res->Set(i, String::New(versions[i]));
+    }
+    
+    return scope.Close(res);
+}
+
+Handle<Value> NamespaceLoader::LoadedNamespaces(const Arguments &args) {
+    HandleScope scope;
+    
+    if(!repo) {
+        repo = g_irepository_get_default();
+    }
+    
+    char **namespaces = g_irepository_get_loaded_namespaces(repo);
+    
+    int size = 0;
+    while(namespaces[size] != NULL) { size++; }
+    
+    Handle<Array> res = Array::New(size);
+    for(int i=0; namespaces[i] != NULL; i++) {
+        res->Set(i, String::New(namespaces[i]));
+    }
+    
+    return scope.Close(res);
+}
+
+Handle<Value> NamespaceLoader::GetVersion(const Arguments &args) {
+    HandleScope scope;
+    
+    if(!repo) {
+        repo = g_irepository_get_default();
+    }
+    
+    if(args.Length() < 1 || !args[0]->IsString()) {
+        return BAD_ARGS();
+    }
+    
+    String::Utf8Value namespace_(args[0]->ToString());
+    
+    const char *version = g_irepository_get_version(repo, *namespace_);
+    
+    return scope.Close(String::New(version));
+}
+
+Handle<Value> NamespaceLoader::GetVersions(const Arguments &args) {
+    HandleScope scope;
+    
+    if(!repo) {
+        repo = g_irepository_get_default();
+    }
+    
+    if(args.Length() < 1 || !args[0]->IsString()) {
+        return BAD_ARGS();
+    }
+    
+    String::Utf8Value namespace_(args[0]->ToString());
+    
+    GList *versions = g_irepository_enumerate_versions(repo, *namespace_);
+    int length = g_list_length(versions);
+    Handle<Array> res = Array::New(length);
+    
+    for(int i=0; i<length; i++) {
+        res->Set(i, String::New((char*)g_list_nth_data(versions, i)));
     }
     
     return scope.Close(res);
