@@ -1,6 +1,5 @@
 var gir = require("../gir");
 
-gir.init();
 console.log(gir.searchPath());
 
 gir.load("Gtk");

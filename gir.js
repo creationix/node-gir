@@ -1,6 +1,8 @@
 var gir = require('./build/default/girepository.node'),
     EventEmitter = require("events").EventEmitter;
 
+gir.init();
+
 var oldLoad = gir.load;
 gir.load = function(namespace, version) {
     if(!version) {
@@ -28,6 +30,17 @@ gir.load = function(namespace, version) {
                     arg.unshift(fname);
                     this.__call__.apply(this, arg);
                 };
+            })(cname);
+        }
+        for(var j in obj.__properties__) {
+            var cname = obj.__properties__[j];
+            (function(propname) {
+                obj.prototype.__defineGetter__(camelcase(cname), function() {
+                    return this.__get_property__.apply(this, [propname]);
+                });
+                obj.prototype.__defineSetter__(camelcase(cname), function(x) {
+                    return this.__set_property__.apply(this, [propname, x]);
+                });
             })(cname);
         }
     }
