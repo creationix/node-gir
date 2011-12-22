@@ -1,1 +1,1 @@
-var gir = module.exports = require('./build/default/girepository.node');
+var gir = module.exports = require('./build/Release/girepository.node');
