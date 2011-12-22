@@ -3,6 +3,6 @@ var gir = require("../gir"),
 
 gir.init();
 
-var webkit = exports.webkit = gir.load("WebKit");
+var webkit = exports.webkit = gir.load("WebKit", "3.0");
 
 module.exports = webkit;
