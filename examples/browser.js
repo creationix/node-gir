@@ -1,12 +1,19 @@
 var gir = require("../gir");
 gir.init();
-var gtk = gir.load("Gtk", "3.0");
 
+var gtk = require("./gtk");
 var WebKit = require("./webkit");
 
 gtk.init(0);
 
 var win = new gtk.Window();
+
+win.__watch_signal__("destroy")
+win.on('destroy', function() {
+  console.log('Window destroyed');
+  gtk.mainQuit();
+  process.exit();
+});
 
 var sw = new gtk.ScrolledWindow();
 win.__call__("add", sw);

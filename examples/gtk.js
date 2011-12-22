@@ -3,9 +3,9 @@ var gir = require("../gir"),
 
 gir.init();
 
-var gtk = exports.gtk = gir.load("Gtk", "2.0");
+var gtk = exports.gtk = gir.load("Gtk", "3.0");
 
-extend(true, gtk.Object.prototype, EventEmitter.prototype);
+extend(true, gtk.Widget.prototype, EventEmitter.prototype);
 
 /**
  * Adopted from jquery's extend method. Under the terms of MIT License.
