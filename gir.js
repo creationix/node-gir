@@ -1,4 +1,4 @@
-var gir = require('./build/default/girepository.node'),
+var gir = require('./build/Release/girepository.node'),
     EventEmitter = require("events").EventEmitter;
 
 gir.init();
