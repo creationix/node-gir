@@ -13,7 +13,7 @@ var sw = new gtk.ScrolledWindow();
 win.add(sw);
 
 var view = new WebKit.WebView();
-view.loadUri("file:///home/sebastian/Downloads/gi-html-1.29.16/index.html");
+view.loadUri("http://www.google.com/");
 sw.add(view);
 
 win.setSizeRequest(640, 480);
