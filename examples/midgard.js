@@ -1,6 +1,4 @@
-var Midgard, gir;
-gir = require("../gir");
-gir.init();
-Midgard = gir.load("Midgard");
+var gir = require("../gir"),
+    Midgard = gir.load("Midgard");
 
 console.log(Midgard);

@@ -12,7 +12,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
 
     if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
         // rly not sure about this
-        printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
+        //printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
         obj = NULL;
     }
     
@@ -36,10 +36,10 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
             out_args_c++;
             in_args_c++;
         }
-        printf("%s %s\n", g_type_tag_to_string(g_type_info_get_tag(g_arg_info_get_type(arg))), g_base_info_get_name(arg));
+        //printf("%s %s\n", g_type_tag_to_string(g_type_info_get_tag(g_arg_info_get_type(arg))), g_base_info_get_name(arg));
         g_base_info_unref(arg);
     }
-    printf("in_args_c is %d, out_args_c is %d, offest ist %d\n", in_args_c, out_args_c, offset_);
+    //printf("in_args_c is %d, out_args_c is %d, offest ist %d\n", in_args_c, out_args_c, offset_);
     
     GIArgument in_args[in_args_c];
     GIArgument out_args[out_args_c];
