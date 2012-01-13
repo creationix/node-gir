@@ -1,6 +1,2 @@
-var Midgard, gir;
-gir = require("../gir");
-gir.init();
-Midgard = gir.load("Midgard");
-
-console.log(Midgard);
+var gir = require('../gir')
+ ,  Midgard = module.exports = gir.load('Midgard');
