@@ -174,19 +174,59 @@ gir.init = function() {
   }
 };
 
-//create callable method object
-function CallableMethod(methodName) {
-  //the internal function does all the hard work
-  var invocation = function() {
-    var args = Array.prototype.slice.call(arguments);
-    if (args == undefined) args = new Array();
-    for (var i = args.length; i > 0; i--)
-      args[i] = args[i-1];
-    args[0] = methodName;
-    //call the method on the gir provided object
-    this.__call__.apply(this, args);
-  };
-  return invocation;
+//converts long_method_names to properCamelCasing :-)
+//converts long-property-names to longPropertyNames
+//Merged from swick/node-gir
+function camelCase(x) {
+  return x.replace(/[-]+/g, function (h) {
+    return '_';
+  }).replace(/\_[a-z]/g, function(h) {
+    return h.substr(1).toUpperCase();
+  });
+}
+
+//create method object
+//simplified using merge from swick/node-gir
+function defineObjectMethod(obj, method_name) {
+  //converts method name to camelCasing on the object
+  obj.prototype[camelCase(method_name)] = function(method_name) {
+    //the internal function does all the hard work
+    var invocation = function() {
+      var args = Array.prototype.slice.call(arguments);
+      if (args == undefined) args = new Array();
+      args.unshift(method_name);
+      //call the method on the gir provided object
+console.log('called',method_name,'in',obj);
+      this.__call__.apply(this, args);
+    };
+    return invocation;
+  }(method_name);
+}
+
+//create property object
+//merged from swick/node-gir
+//added try{}catch{} block because of TypeError: Illegal invocation, in what appears
+//to be accessing beyond object access boundaries, e.g. trying to access a private member, or
+//setting a getter-only property, or something to that effect.
+//perhaps someone can figure out why this version throws TypeError: Illegal invocation 
+//across certain boundaries while the swick/node-gir does not :~ could be a diff in binaries
+function defineObjectProperty(obj, property_name) {
+  obj.prototype.__defineGetter__(camelCase(property_name), function() {
+    try {
+      return this.__get_property__.apply(this, [property_name]);
+    } catch (err) {
+      //debug:console.warn('[node-gir] Error trying to install getter ' + camelCase(property_name) + '.', err);
+      return undefined;
+    }
+  });
+  obj.prototype.__defineSetter__(camelCase(property_name), function(newValue) {
+    try {
+      return this.__set_property__.apply(this, [property_name, newValue]);
+    } catch (err) {
+      //debug:console.warn('[node-gir] Error trying to install setter ' + camelCase(property_name) + '.', err);
+      return newValue;
+    }
+  });
 }
 
 //override default loader
@@ -205,6 +245,7 @@ gir.load = function() {
   //for each object within the loaded gir module:
   //  task 1. figure out which loaded objects can trigger events, and add EventEmitter as needed
   //  task 2. make method names callable methods
+  //  task 3. properties need getter/setter set (merge from swick/node-gir)
   for (var subobj in obj) {
     //task 1: add EventEmitter as needed
     //determine whether eventable
@@ -225,23 +266,45 @@ gir.load = function() {
       }
     }
 
-    //task 2: expose object methods to objects and make them callable
+    //task 2: expose methods and make them callable
+    //task 3: expose properties and make them settable/gettable
     for (var prop in obj[subobj]) {
       switch (prop) {
-        case '__methods__':
-          for (var method_offset in obj[subobj][prop]) {
-            var method_name = obj[subobj][prop][method_offset];
-            //debug:console.log(subobj + '.'  + method_name + '() discovered');
+        case '__methods__':  //task 2
+          for (var method in obj[subobj][prop]) {
+            var method_name = obj[subobj][prop][method];
             //add method handler to object if possible
-            if (obj[subobj].prototype[method_name] != undefined)
-              {}//debug:console.warn("[node-gir] " + subobj + " object provides it's own " + method_name + " method. Not replacing existing method. :-(");
-            else
-              obj[subobj].prototype[method_name] = CallableMethod(method_name);
+            if (!obj[subobj].prototype[method_name])
+              defineObjectMethod(obj[subobj], method_name);
+            //else
+              //debug:console.warn("[node-gir] " + subobj + " object provides it's own " + method_name + " method. Not replacing existing method. :-(");
+              
+            //Not sure if this would do anything positive:
+            //Check for new(), and makes new() the default constructor if it's in the gir object.
+            //Disabled until it would serve useful. It simply assigns the new() function as
+            //the JS constructor for the object. There is a small problem: some objects have multiple
+            //new() functions, probably due to object inheritence or overloading. :~ Not sure really,
+            //but it seems to add no new functionality while simultaneously not taking anything away.
+            //It may be thrown away in a future commit if it is decidedly useless.
+            //DISABLED:
+            /*if (method_name == 'new') {
+              //debug:console.log('[node-gir] Using new() as the default constructor for', subobj, 'provided by gir.');
+              obj[subobj].prototype.constructor = defineObjectMethod(obj[subobj], 'new');
+            }*/
+          }
+          break;
+        case '__properties__': //task 3
+          for (var property in obj[subobj][prop]) {
+            var property_name = obj[subobj][prop][property];
+            //add property handler to object if possible
+            if (!obj[subobj].prototype[property_name])
+              defineObjectProperty(obj[subobj], property_name);
+            //else
+              //debug:console.warn("[node-gir] " + subobj + " object provides it's own " + property_name + " property. Not replacing existing property. :-(");
           }
           break;
       }
     }
-    //console.log(subobj, obj[subobj]);
   }
 
   //keep the loader in the loaded object in case caller wants to reuse the loader
