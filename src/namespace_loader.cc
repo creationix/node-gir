@@ -14,7 +14,7 @@ GIRepository *NamespaceLoader::repo = NULL;
 std::map<char *, GITypelib*> NamespaceLoader::type_libs;
 
 void NamespaceLoader::Initialize(Handle<Object> target) {
-    GIR_SET_METHOD(target, "load", NamespaceLoader::Load);
+    GIR_SET_METHOD(target, "import", NamespaceLoader::Import);
     GIR_SET_METHOD(target, "searchPath", NamespaceLoader::SearchPath);
     GIR_SET_METHOD(target, "isRegistered", NamespaceLoader::IsRegistered);
     GIR_SET_METHOD(target, "getDependencies", NamespaceLoader::GetDependencies);
@@ -23,7 +23,7 @@ void NamespaceLoader::Initialize(Handle<Object> target) {
     GIR_SET_METHOD(target, "getVersions", NamespaceLoader::GetVersions);
 }
 
-Handle<Value> NamespaceLoader::Load(const Arguments &args) {
+Handle<Value> NamespaceLoader::Import(const Arguments &args) {
     HandleScope scope;
     
     if(args.Length() < 1) {
