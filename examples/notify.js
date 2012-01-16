@@ -2,7 +2,7 @@
 var gir = require('../gir')
  ,  notify = gir.load('Notify');
  
-console.log(notify.init('notify_test.js sample application'));
+console.log(notify.init('Notify Example'));
 
 var n = new notify.Notification();
 var created = n.__call__('new', 'a', 'a', 'a', 'a');
@@ -13,7 +13,7 @@ for(var k in n) {
 
 console.log(notify.Notification.__methods__);
 
-n.update('Notify Test', 'This is a test notification message via Node.JS.');
+n.update('Notify Example', 'This is an example notification from Node.JS.');
 n.show();
 
 setTimeout(
@@ -26,8 +26,8 @@ setTimeout(
         n.show();
         setTimeout(
           function () {
-            n.close();
             console.log('Adios!');
+            n.close();
           }, 5000
         );
       }, 4000

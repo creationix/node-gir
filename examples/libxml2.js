@@ -1,2 +1,2 @@
 var gir = require('../gir'),
- ,  libxml2 = exports.gtk = gir.load('libxml2');
+ ,  libxml2 = exports.gtk = gir.import('libxml2');

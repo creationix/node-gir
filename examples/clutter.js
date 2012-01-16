@@ -1,5 +1,5 @@
 var gir = require('../gir')
- ,  clutter = gir.load('Clutter');
+ ,  clutter = gir.import('Clutter');
  
 clutter.init(0);
 
@@ -15,16 +15,16 @@ var stage = sm.getDefaultStage();
 
 console.log('StageManager:', sm, 'Stage:', stage);
 
-stage.title = 'Node.JS Clutter Example';
+stage.title = 'node-gir Clutter Example';
 stage.setSize(400,300);
 stage.setColor(0,0,0,127);
 stage.show();
 
-stage.on('button-press-event', function(a,b,c) {
+stage.onButtonPressEvent(function(a,b,c) {
   console.log('button press event', a, b, c);
 });
 
-stage.on('destroy', function() {
+stage.onDestroy(function() {
   console.log('destroy');
   clutter.mainQuit();
   process.exit();
