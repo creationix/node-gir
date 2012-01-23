@@ -14,8 +14,6 @@ def configure(conf):
   conf.check_tool("node_addon")
   conf.check_cfg(package='gobject-introspection-1.0', uselib_store='GIREPOSITORY', args='--cflags --libs')
   conf.check_cfg(package='glib', uselib_store='GLIB', args='--cflags --libs')
-  conf.check_cfg(package='gtk+-2.0', uselib_store='GTK', args='--cflags --libs')
-  conf.check_cfg(package='gdk-2.0', uselib_store='GDK', args='--cflags --libs')
 
 def build(bld):
   obj = bld.new_task_gen("cxx", "shlib", "node_addon")
