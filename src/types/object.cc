@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "object.h"
 #include "../util.h"
 #include "../function.h"
@@ -7,6 +9,7 @@
 #include <node.h>
 
 using namespace v8;
+using namespace std;
 
 namespace gir {
 
@@ -196,7 +199,7 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespa
     oft.namespace_ = namespace_;
     
     templates.push_back(oft);
-    
+
     t->InstanceTemplate()->SetInternalFieldCount(1); 
     
     // to identify the object in the constructor
@@ -217,7 +220,7 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespa
         g_base_info_unref(constant);
     }
     
-    
+    RegisterMethods(info, t); 
     SetPrototypeMethods(t, name);
 }
 
@@ -250,7 +253,7 @@ void GIRObject::Initialize(Handle<Object> target, char *namespace_) {
 
 void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name) {
     HandleScope scope;
-    
+ 
     NODE_SET_PROTOTYPE_METHOD(t, "__call__", CallMethod);
     NODE_SET_PROTOTYPE_METHOD(t, "__get_property__", GetProperty);
     NODE_SET_PROTOTYPE_METHOD(t, "__set_property__", SetProperty);
@@ -319,6 +322,23 @@ void GIRObject::SignalFinalize(gpointer marshal_data, GClosure *c) {
     delete[] data;
 }
 
+Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args) {
+    HandleScope scope;
+        
+    v8::String::AsciiValue fname(args.Callee()->GetName());
+    printf("CallUnknownMethod '%s' \n", *fname);
+    GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
+    GIFunctionInfo *func = that->FindMethod(that->info, *fname);
+    
+    if(func) {
+        return scope.Close(Func::Call(that->obj, func, args, TRUE));
+    }
+    else {
+        return EXCEPTION("no such method");
+    }
+    
+    return scope.Close(Undefined());
+}
 
 Handle<Value> GIRObject::CallMethod(const Arguments &args) {
     HandleScope scope;
@@ -332,7 +352,7 @@ Handle<Value> GIRObject::CallMethod(const Arguments &args) {
     GIFunctionInfo *func = that->FindMethod(that->info, *fname);
     
     if(func) {
-        return scope.Close(Func::Call(that->obj, func, args));
+        return scope.Close(Func::Call(that->obj, func, args, FALSE));
     }
     else {
         return EXCEPTION("no such method");
@@ -665,6 +685,37 @@ Handle<Object> GIRObject::MethodList(GIObjectInfo *info) {
     }
     
     return list;
+}
+
+void GIRObject::RegisterMethods(GIObjectInfo *info, Handle<FunctionTemplate> t) {
+    bool first = true;
+    int gcounter = 0;
+    g_base_info_ref(info);
+    
+    while(true) {
+        if(!first) {
+            GIObjectInfo *parent = g_object_info_get_parent(info);
+            if(!parent) {
+		g_base_info_unref(info);
+                return;
+            }
+            if(strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
+		g_base_info_unref(info);
+                return;
+            }
+            g_base_info_unref(info);
+            info = parent;
+        }
+        
+        int l = g_object_info_get_n_methods(info);
+        for(int i=0; i<l; i++) {
+            GIFunctionInfo *func = g_object_info_get_method(info, i);
+	    NODE_SET_PROTOTYPE_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
+            g_base_info_unref(func);
+        }
+        gcounter += l;
+        first = false;
+    }
 }
 
 Handle<Object> GIRObject::InterfaceList(GIObjectInfo *info) {

@@ -8,7 +8,7 @@ using namespace v8;
 
 namespace gir {
 
-Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &args) {
+Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &args, bool ignore_function_name) {
 
     if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
         // rly not sure about this
@@ -45,17 +45,21 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
     GIArgument out_args[out_args_c];
     
     int in_c = offset_, out_c = 0;
+    int real_arg_idx = 0;
     for(int i=0; i<l; i++) {
+	/* Ignore function name in arguments:    
+	 * o.__call__("func_name", args) VS o.func_name(args) */    
+	real_arg_idx = ignore_function_name ? i : i + offset_;
         GIArgInfo *arg = g_callable_info_get_arg(info, i);
         GIDirection dir = g_arg_info_get_direction(arg);
         if(dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
-            if(!Args::ToGType(args[i+offset_], &in_args[in_c], arg)) {
+            if(!Args::ToGType(args[real_arg_idx], &in_args[in_c], arg)) {
                 return BAD_ARGS();
             }
             in_c++;
         }
         if(dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT) {
-            if(!Args::ToGType(args[i+offset_], &(out_args[out_c]), arg)) {
+            if(!Args::ToGType(args[real_arg_idx], &(out_args[out_c]), arg)) {
                 return BAD_ARGS();
             }
             out_c++;

@@ -49,10 +49,12 @@ class GIRObject : public node::ObjectWrap {
     
     static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info, char *namespace_);
     static void SetPrototypeMethods(v8::Handle<v8::FunctionTemplate> t, char *name);
-    
+    static void RegisterMethods(GIObjectInfo *info, v8::Handle<v8::FunctionTemplate> t); 
+
     static void Initialize(v8::Handle<v8::Object> target, char *namespace_);
-    
+   
     static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
+    static v8::Handle<v8::Value> CallUnknownMethod(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetProperty(const v8::Arguments &args);
     static v8::Handle<v8::Value> SetProperty(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetInterface(const v8::Arguments &args);

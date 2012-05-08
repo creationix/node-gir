@@ -90,7 +90,7 @@ Handle<Value> GIRFunction::Execute(const Arguments &args) {
     delete[] fn;
     
     if(func) {
-        return scope.Close(Func::Call(NULL, func, args));
+        return scope.Close(Func::Call(NULL, func, args, TRUE));
     }
     else {
         return EXCEPTION("no such function");
