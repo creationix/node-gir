@@ -17,8 +17,8 @@ FIXME: this is reeeealy ugly. we should find onother way to find the namespace a
        and/or even consider if we just create a __call__ function like we do in object.cc
 */
 
-
-void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, char *namespace_) {
+void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, char *namespace_) 
+{
     HandleScope scope;
     
     const char *fname = g_base_info_get_name(info);
@@ -38,7 +38,8 @@ void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, char *na
 }
 
 
-char *GIRFunction::ToCamelCase(const char *str) {
+char *GIRFunction::ToCamelCase(const char *str) 
+{
     int l = strlen(str), it = 0;
     char *res = new char[l];
     
@@ -59,7 +60,8 @@ char *GIRFunction::ToCamelCase(const char *str) {
     return res;
 }
 
-Handle<Value> GIRFunction::Execute(const Arguments &args) {
+Handle<Value> GIRFunction::Execute(const Arguments &args) 
+{
     HandleScope scope;
     
     String::Utf8Value fname(args.Callee()->Get(String::New("__fname__")));
@@ -98,6 +100,5 @@ Handle<Value> GIRFunction::Execute(const Arguments &args) {
     
     return scope.Close(Undefined());
 }
-
 
 }
