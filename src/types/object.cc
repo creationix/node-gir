@@ -726,11 +726,11 @@ void GIRObject::RegisterMethods(GIObjectInfo *info, Handle<FunctionTemplate> t)
         if (!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
             if (!parent) {
-		g_base_info_unref(info);
+		        g_base_info_unref(info);
                 return;
             }
             if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
-		g_base_info_unref(info);
+		        g_base_info_unref(info);
                 return;
             }
             g_base_info_unref(info);
@@ -740,7 +740,16 @@ void GIRObject::RegisterMethods(GIObjectInfo *info, Handle<FunctionTemplate> t)
         int l = g_object_info_get_n_methods(info);
         for (int i=0; i<l; i++) {
             GIFunctionInfo *func = g_object_info_get_method(info, i);
-	    NODE_SET_PROTOTYPE_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
+            GIFunctionInfoFlags func_flag = g_function_info_get_flags(func);
+	        // Determine if method is static one.
+	        // If given function is neither method nor constructor, it's most likely static method.
+            // In such case, do not set prototype method.
+            if (func_flag & GI_FUNCTION_IS_METHOD) {
+                NODE_SET_PROTOTYPE_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
+            } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
+                NODE_SET_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
+            }
+	        NODE_SET_PROTOTYPE_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
             g_base_info_unref(func);
         }
         gcounter += l;
