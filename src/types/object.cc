@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "object.h"
+#include "function.h"
 #include "../util.h"
 #include "../function.h"
 #include "../values.h"
@@ -226,7 +227,7 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespa
         g_base_info_unref(constant);
     }
     
-    RegisterMethods(info, t); 
+    RegisterMethods(target, info, namespace_, t); 
     SetPrototypeMethods(t, name);
 }
 
@@ -716,7 +717,7 @@ Handle<Object> GIRObject::MethodList(GIObjectInfo *info)
     return list;
 }
 
-void GIRObject::RegisterMethods(GIObjectInfo *info, Handle<FunctionTemplate> t) 
+void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const char *namespace_, Handle<FunctionTemplate> t) 
 {
     bool first = true;
     int gcounter = 0;
@@ -740,16 +741,18 @@ void GIRObject::RegisterMethods(GIObjectInfo *info, Handle<FunctionTemplate> t)
         int l = g_object_info_get_n_methods(info);
         for (int i=0; i<l; i++) {
             GIFunctionInfo *func = g_object_info_get_method(info, i);
+            const char *func_name = g_base_info_get_name(func);
             GIFunctionInfoFlags func_flag = g_function_info_get_flags(func);
-	        // Determine if method is static one.
-	        // If given function is neither method nor constructor, it's most likely static method.
+            // Determine if method is static one.
+            // If given function is neither method nor constructor, it's most likely static method.
             // In such case, do not set prototype method.
             if (func_flag & GI_FUNCTION_IS_METHOD) {
-                NODE_SET_PROTOTYPE_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
+                NODE_SET_PROTOTYPE_METHOD(t, func_name, CallUnknownMethod);
             } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
-                NODE_SET_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
+                GIRFunction::Initialize(target, info, namespace_);
+                NODE_SET_METHOD(t, func_name, GIRFunction::Execute);
             }
-	        NODE_SET_PROTOTYPE_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
+            //NODE_SET_PROTOTYPE_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
             g_base_info_unref(func);
         }
         gcounter += l;

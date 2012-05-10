@@ -17,7 +17,7 @@ FIXME: this is reeeealy ugly. we should find onother way to find the namespace a
        and/or even consider if we just create a __call__ function like we do in object.cc
 */
 
-void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, char *namespace_) 
+void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, const char *namespace_) 
 {
     HandleScope scope;
     
@@ -36,7 +36,6 @@ void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, char *na
     delete[] jsname;
     delete[] name;
 }
-
 
 char *GIRFunction::ToCamelCase(const char *str) 
 {
@@ -67,7 +66,8 @@ Handle<Value> GIRFunction::Execute(const Arguments &args)
     String::Utf8Value fname(args.Callee()->Get(String::New("__fname__")));
     
     int l=strlen(*fname);
-    char *ns, *fn;
+    char *ns = NULL;
+    char *fn = NULL;
     for(int i=0; i<l; i++) {
         if((*fname)[i] == ':') {
             
@@ -86,11 +86,13 @@ Handle<Value> GIRFunction::Execute(const Arguments &args)
             break;
         }
     }
-    
+   
+    printf("EXECUTE '%s' '%s' '%s' \n", *fname, ns, fn);
+
     GIFunctionInfo *func = g_irepository_find_by_name(NamespaceLoader::repo, ns, fn);
     delete[] ns;
     delete[] fn;
-    
+
     if(func) {
         return scope.Close(Func::Call(NULL, func, args, TRUE));
     }
