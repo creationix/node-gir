@@ -20,8 +20,9 @@ FIXME: this is reeeealy ugly. we should find onother way to find the namespace a
 void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, const char *namespace_) 
 {
     HandleScope scope;
-    
+   
     const char *fname = g_base_info_get_name(info);
+    const gchar *ns = g_base_info_get_namespace(info);
     char *name = new char[strlen(namespace_) + strlen(fname) + 2];
     strcpy(name, namespace_);
     name[strlen(namespace_)] = ':';
@@ -29,9 +30,10 @@ void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, const ch
     
     Local<FunctionTemplate> temp = FunctionTemplate::New(Execute);
     temp->GetFunction()->Set(String::New("__fname__"), String::New(name));
-    
+    temp->GetFunction()->SetName(String::New(name));
+
     char *jsname = ToCamelCase(g_base_info_get_name(info));
-    target->Set(String::NewSymbol(jsname), temp->GetFunction());
+    target->Set(String::NewSymbol(fname), temp->GetFunction());
 
     delete[] jsname;
     delete[] name;
@@ -63,8 +65,10 @@ Handle<Value> GIRFunction::Execute(const Arguments &args)
 {
     HandleScope scope;
     
-    String::Utf8Value fname(args.Callee()->Get(String::New("__fname__")));
-    
+    //String::Utf8Value fname(args.Callee()->Get(String::New("__fname__")));
+    String::Utf8Value fname(args.Callee()->GetName());
+    String::AsciiValue func_name(args.Callee()->GetName());
+
     int l=strlen(*fname);
     char *ns = NULL;
     char *fn = NULL;
@@ -87,7 +91,11 @@ Handle<Value> GIRFunction::Execute(const Arguments &args)
         }
     }
    
-    printf("EXECUTE '%s' '%s' '%s' \n", *fname, ns, fn);
+    printf("EXECUTE '%s' '%s' '%s' '%s' \n", *fname, ns, fn, *func_name);
+
+    if (ns == NULL || fn == NULL) {
+        return EXCEPTION("Unknown namespace or function");
+    }
 
     GIFunctionInfo *func = g_irepository_find_by_name(NamespaceLoader::repo, ns, fn);
     delete[] ns;

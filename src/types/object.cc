@@ -5,6 +5,7 @@
 #include "../util.h"
 #include "../function.h"
 #include "../values.h"
+#include "../gir_info_holder.h"
 
 #include <string.h>
 #include <node.h>
@@ -340,12 +341,34 @@ Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args)
     HandleScope scope;
         
     v8::String::AsciiValue fname(args.Callee()->GetName());
-    printf("CallUnknownMethod '%s' \n", *fname);
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
     GIFunctionInfo *func = that->FindMethod(that->info, *fname);
     
     if (func) {
         return scope.Close(Func::Call(that->obj, func, args, TRUE));
+    }
+    else {
+        return EXCEPTION("no such method");
+    }
+    
+    return scope.Close(Undefined());
+}
+
+Handle<Value> GIRObject::CallStaticMethod(const Arguments &args) 
+{
+    HandleScope scope;
+        
+    v8::String::AsciiValue fname(args.Callee()->GetName());
+    v8::Handle<v8::External> info_ptr = 
+        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
+    GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
+    printf("CallStaticMethod '%s'.'%s'.'%s' \n",
+            g_base_info_get_namespace(func), 
+            g_function_info_get_symbol(func),
+            g_base_info_get_name(func));
+    
+    if (func) {
+        return scope.Close(Func::Call(NULL, func, args, TRUE));
     }
     else {
         return EXCEPTION("no such method");
@@ -722,16 +745,17 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
     bool first = true;
     int gcounter = 0;
     g_base_info_ref(info);
+    GIObjectInfo *src_info = info;
     
     while (true) {
         if (!first) {
             GIObjectInfo *parent = g_object_info_get_parent(info);
             if (!parent) {
-		        g_base_info_unref(info);
+                g_base_info_unref(info);
                 return;
             }
             if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
-		        g_base_info_unref(info);
+                g_base_info_unref(info);
                 return;
             }
             g_base_info_unref(info);
@@ -749,10 +773,16 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
             if (func_flag & GI_FUNCTION_IS_METHOD) {
                 NODE_SET_PROTOTYPE_METHOD(t, func_name, CallUnknownMethod);
             } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
-                GIRFunction::Initialize(target, info, namespace_);
-                NODE_SET_METHOD(t, func_name, GIRFunction::Execute);
+                // Create new function
+                Local< Function > callback_func = FunctionTemplate::New(CallStaticMethod)->GetFunction();
+                // Set name
+                callback_func->SetName(String::New(func_name));
+                // Create external to hold GIBaseInfo and set it
+                v8::Handle<v8::External> info_ptr = v8::External::New((void*)g_base_info_ref(func));
+                callback_func->SetHiddenValue(String::New("GIInfo"), info_ptr);
+                // Set v8 function
+                t->Set(String::NewSymbol(func_name), callback_func);
             }
-            //NODE_SET_PROTOTYPE_METHOD(t, g_base_info_get_name(func), CallUnknownMethod);
             g_base_info_unref(func);
         }
         gcounter += l;
