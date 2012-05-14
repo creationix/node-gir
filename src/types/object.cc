@@ -113,8 +113,12 @@ Handle<Value> GIRObject::New(const Arguments &args)
     }
 
     String::AsciiValue className( args.This()->Get( String::New("__classname__")) );
+    /*v8::Handle<v8::External> info_handle =
+        v8::Handle<v8::External>::Cast(args.This()->GetHiddenValue(String::New("GIInfo")));
+    GIBaseInfo *info  = (GIBaseInfo*) info_handle->Value();
+    const char *class_name = g_base_info_get_name(info);*/
     std::vector<ObjectFunctionTemplate>::iterator it;
-    
+
     GIObjectInfo *info = NULL;
     for (it = templates.begin(); it != templates.end(); ++it) {
         if (strcmp(it->type_name, *className) == 0) {
@@ -122,6 +126,7 @@ Handle<Value> GIRObject::New(const Arguments &args)
             break;
         }
     }
+
     if (info == NULL) {
         return EXCEPTION("no such class. __calssname__ may be incorrect");
     }
@@ -188,11 +193,27 @@ void GIRObject::DeleteParams(GParameter* params, int l)
     delete[] params;
 }
 
-void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespace_) 
+v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
+{
+    printf("GET HANDLER");
+}
+
+v8::Handle<v8::Integer> PropertyQueryHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
+{
+    printf("QUERY HANDLER");
+}
+
+v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Value > value, const v8::AccessorInfo &info) 
+{
+    printf("SET HANDLER");
+}
+
+void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) 
 {
     HandleScope scope;
 
     char *name = (char*)g_base_info_get_name(info);
+    const char *namespace_ = g_base_info_get_namespace(info);
     g_base_info_ref(info);
     
     Local<FunctionTemplate> temp = FunctionTemplate::New(New);
@@ -204,14 +225,21 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespa
     oft.info = info;
     oft.function = t;
     oft.type = g_registered_type_info_get_g_type(info);
-    oft.namespace_ = namespace_;
+    oft.namespace_ = (char*)namespace_;
     
     templates.push_back(oft);
 
-    t->InstanceTemplate()->SetInternalFieldCount(1); 
+    // Create instance template
+    v8::Local<v8::ObjectTemplate> instance_t = t->InstanceTemplate();
+    instance_t->SetInternalFieldCount(1);
+    // Create external to hold GIBaseInfo and set it
+    // v8::Handle<v8::External> info_handle = v8::External::New((void*)g_base_info_ref(info));
+    // Set properties handlers
+    //instance_t->SetNamedPropertyHandler(PropertyGetHandler, PropertySetHandler, PropertyQueryHandler, 0, 0, info_handle);
     
     // to identify the object in the constructor
     t->PrototypeTemplate()->Set(String::NewSymbol("__classname__"), String::New(name));
+    //t->PrototypeTemplate()->SetHiddenValue(String::New("GIInfo"), info_handle);
     
     t->Set(String::NewSymbol("__properties__"), PropertyList(info));
     t->Set(String::NewSymbol("__methods__"), MethodList(info));
@@ -228,7 +256,7 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info, char *namespa
         g_base_info_unref(constant);
     }
     
-    RegisterMethods(target, info, namespace_, t); 
+    RegisterMethods(target, info, namespace_, t);
     SetPrototypeMethods(t, name);
 }
 

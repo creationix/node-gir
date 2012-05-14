@@ -47,7 +47,7 @@ class GIRObject : public node::ObjectWrap {
     static v8::Handle<v8::Value> New(GObject *obj, GType t);
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     
-    static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info, char *namespace_);
+    static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
     static void SetPrototypeMethods(v8::Handle<v8::FunctionTemplate> t, char *name);
     static void RegisterMethods(v8::Handle<v8::Object> target, GIObjectInfo *info, const char *namespace_, v8::Handle<v8::FunctionTemplate> t); 
 

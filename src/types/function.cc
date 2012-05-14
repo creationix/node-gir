@@ -12,9 +12,10 @@ using namespace v8;
 
 namespace gir {
 
-void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info, const char *namespace_) 
+void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info) 
 {
     const char *func_name = g_base_info_get_name(info);
+    const char *namespace_ = g_base_info_get_namespace(info);
     // Create new function
     Local<FunctionTemplate> temp = FunctionTemplate::New(Execute);
     // Set name

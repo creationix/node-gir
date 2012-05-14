@@ -83,7 +83,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 ParseFlags((GIEnumInfo*)info, exports);
                 break;
             case GI_INFO_TYPE_OBJECT:
-                GIRObject::Prepare(exports, (GIObjectInfo*)info, namespace_);
+                GIRObject::Prepare(exports, (GIObjectInfo*)info);
                 break;
             case GI_INFO_TYPE_INTERFACE:
                 ParseInterface((GIInterfaceInfo*)info, exports);
@@ -92,10 +92,9 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 ParseUnion((GIUnionInfo*)info, exports);
                 break;
             case GI_INFO_TYPE_FUNCTION:
-                GIRFunction::Initialize(exports, (GIFunctionInfo*)info, namespace_);
+                GIRFunction::Initialize(exports, (GIFunctionInfo*)info);
         }
-        
-        
+          
         g_base_info_unref(info);
     }
     
