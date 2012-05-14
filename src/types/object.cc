@@ -264,7 +264,6 @@ void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name)
 {
     HandleScope scope;
  
-    NODE_SET_PROTOTYPE_METHOD(t, "__call__", CallMethod);
     NODE_SET_PROTOTYPE_METHOD(t, "__get_property__", GetProperty);
     NODE_SET_PROTOTYPE_METHOD(t, "__set_property__", SetProperty);
     NODE_SET_PROTOTYPE_METHOD(t, "__get_interface__", GetInterface);
