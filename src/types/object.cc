@@ -5,7 +5,6 @@
 #include "../util.h"
 #include "../function.h"
 #include "../values.h"
-#include "../gir_info_holder.h"
 
 #include <string.h>
 #include <node.h>
