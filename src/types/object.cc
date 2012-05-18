@@ -133,7 +133,7 @@ Handle<Value> GIRObject::New(const Arguments &args)
     int length = 0;
     GParameter *params;
     if (!ToParams(args[0], &params, &length, info)) {
-        return BAD_ARGS();
+        return BAD_ARGS("Failed to convert arguments to GParameter");
     }
     
     GIRObject *obj = new GIRObject(info, length, params);
@@ -369,8 +369,10 @@ Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args)
     v8::String::AsciiValue fname(args.Callee()->GetName());
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
     GIFunctionInfo *func = that->FindMethod(that->info, *fname);
+    printf("Call Method: '%s' [%p] \n", *fname, func);
     
     if (func) {
+        printf("Call symbol: '%s' \n", g_function_info_get_symbol(func));
         return scope.Close(Func::Call(that->obj, func, args, TRUE));
     }
     else {
@@ -408,7 +410,7 @@ Handle<Value> GIRObject::CallMethod(const Arguments &args)
     HandleScope scope;
     
     if (args.Length() < 1 || !args[0]->IsString()) {
-        return BAD_ARGS();
+        return BAD_ARGS("Invalid argument's number or type");
     }
     
     String::Utf8Value fname(args[0]);
@@ -430,7 +432,7 @@ Handle<Value> GIRObject::GetProperty(const Arguments &args)
     HandleScope scope;
     
     if (args.Length() < 1 || !args[0]->IsString()) {
-        return BAD_ARGS();
+        return BAD_ARGS("Invalid argument's number or type");
     }
     
     String::Utf8Value propname(args[0]);
@@ -461,7 +463,7 @@ Handle<Value> GIRObject::SetProperty(const Arguments &args)
     HandleScope scope;
     
     if(args.Length() < 2 || !args[0]->IsString()) {
-        return BAD_ARGS();
+        return BAD_ARGS("Invalid argument's number or type");
     }
     
     String::Utf8Value propname(args[0]);
@@ -491,7 +493,7 @@ Handle<Value> GIRObject::GetInterface(const Arguments &args)
     HandleScope scope;
     
     if (args.Length() < 1 || !args[0]->IsString()) {
-        return BAD_ARGS();
+        return BAD_ARGS("Invalid argument's number or type");
     }
     
     String::Utf8Value iname(args[0]);
@@ -513,7 +515,7 @@ Handle<Value> GIRObject::GetField(const Arguments &args)
     HandleScope scope;
     
     if (args.Length() < 1 || !args[0]->IsString()) {
-        return BAD_ARGS();
+        return BAD_ARGS("Invalid argument's numer or type");
     }
     
     String::Utf8Value fname(args[0]);
@@ -535,7 +537,7 @@ Handle<Value> GIRObject::WatchSignal(const Arguments &args)
     HandleScope scope;
     
     if (args.Length() < 1 || !args[0]->IsString()) {
-        return BAD_ARGS();
+        return BAD_ARGS("Invalid argument's number or type");
     }
     bool after = true;
     if (args.Length() > 1 && args[1]->IsBoolean()) {
@@ -569,7 +571,7 @@ Handle<Value> GIRObject::CallVFunc(const Arguments &args)
     HandleScope scope;
     
     if (args.Length() < 1 || !args[0]->IsString()) {
-        return BAD_ARGS();
+        return BAD_ARGS("Invalid argument's number or type");
     }
     
     String::Utf8Value fname(args[0]);

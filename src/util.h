@@ -6,8 +6,8 @@
             v8::Integer::New(constant),                               \
             static_cast<v8::PropertyAttribute>(v8::ReadOnly|v8::DontDelete))
 
-#define BAD_ARGS() \
-    ThrowException(Exception::Error(String::New("bad arguments")));
+#define BAD_ARGS(_msg) \
+    ThrowException(Exception::Error(String::New(_msg)));
 
 #define NO_UNDERLYING_OBJECT() \
     ThrowException(Exception::Error(String::New("no underlying object found")));
