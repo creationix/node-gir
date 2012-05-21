@@ -232,7 +232,7 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info)
     v8::Local<v8::ObjectTemplate> instance_t = t->InstanceTemplate();
     instance_t->SetInternalFieldCount(1);
     // Create external to hold GIBaseInfo and set it
-    // v8::Handle<v8::External> info_handle = v8::External::New((void*)g_base_info_ref(info));
+    //v8::Handle<v8::External> info_handle = v8::External::New((void*)g_base_info_ref(info));
     // Set properties handlers
     //instance_t->SetNamedPropertyHandler(PropertyGetHandler, PropertySetHandler, PropertyQueryHandler, 0, 0, info_handle);
     
