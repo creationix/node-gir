@@ -43,7 +43,7 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_)
     }
     
     // very interesting: gtk.Window with a child. child.get_parent_window() returns a GIObjetInfo with name GdkWindow (Namespace GDK!)
-    // printf("type is %s\n", g_type_name(g_registered_type_info_get_g_type(info_)));
+    // debug_printf("type is %s\n", g_type_name(g_registered_type_info_get_g_type(info_)));
     
     Handle<Value> res = GetInstance(obj_);
     if (res != Null()) {
@@ -114,7 +114,7 @@ Handle<Value> GIRObject::New(const Arguments &args)
     //String::AsciiValue className( args.This()->Get( String::New("__classname__")) );
     String::AsciiValue className(args.Callee()->GetName());
     const char *_name = "";
-    printf ("CTR '%s' ('%s') \n", _name, *className); 
+    debug_printf ("CTR '%s' ('%s') \n", _name, *className); 
     /*v8::Handle<v8::External> info_handle =
         v8::Handle<v8::External>::Cast(args.This()->GetHiddenValue(String::New("GIInfo")));
     GIBaseInfo *info  = (GIBaseInfo*) info_handle->Value();
@@ -198,7 +198,7 @@ void GIRObject::DeleteParams(GParameter* params, int l)
 v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
 {
     String::AsciiValue _name(name);
-    printf("GET HANDLER '%s' \n", *_name);
+    debug_printf("GET HANDLER '%s' \n", *_name);
 
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
@@ -206,7 +206,7 @@ v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::A
         GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
         // Check if we have property info
         if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) {
-            printf("GET PROPERTY '%s' \n", *_name);
+            debug_printf("GET PROPERTY '%s' \n", *_name);
             // Property is not readable
             if (!(g_property_info_get_flags(prop_info) & G_PARAM_READABLE)) {
                 return EXCEPTION("property is not readable");
@@ -235,13 +235,13 @@ v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::A
 v8::Handle<v8::Integer> PropertyQueryHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
 {
     String::AsciiValue _name(name);
-    printf("QUERY HANDLER '%s' \n", *_name);
+    debug_printf("QUERY HANDLER '%s' \n", *_name);
 }
 
 v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Value > value, const v8::AccessorInfo &info) 
 {
     String::AsciiValue _name(name);
-    printf("SET HANDLER '%s' \n", *_name);
+    debug_printf("SET HANDLER '%s' \n", *_name);
 
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
@@ -249,7 +249,7 @@ v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Valu
         GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
         // Check if we have property info
         if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) {
-            printf("SET PROPERTY '%s' \n", *_name);
+            debug_printf("SET PROPERTY '%s' \n", *_name);
             // Property is not readable
             if (!(g_property_info_get_flags(prop_info) & G_PARAM_WRITABLE)) {
                 return EXCEPTION("property is not readable");
@@ -432,10 +432,10 @@ Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args)
     v8::String::AsciiValue fname(args.Callee()->GetName());
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
     GIFunctionInfo *func = that->FindMethod(that->info, *fname);
-    printf("Call Method: '%s' [%p] \n", *fname, func);
+    debug_printf("Call Method: '%s' [%p] \n", *fname, func);
     
     if (func) {
-        printf("Call symbol: '%s' \n", g_function_info_get_symbol(func));
+        debug_printf("Call symbol: '%s' \n", g_function_info_get_symbol(func));
         return scope.Close(Func::Call(that->obj, func, args, TRUE));
     }
     else {
@@ -453,7 +453,7 @@ Handle<Value> GIRObject::CallStaticMethod(const Arguments &args)
     v8::Handle<v8::External> info_ptr = 
         v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
     GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
-    printf("CallStaticMethod '%s'.'%s'.'%s' \n",
+    debug_printf("CallStaticMethod '%s'.'%s'.'%s' \n",
             g_base_info_get_namespace(func), 
             g_function_info_get_symbol(func),
             g_base_info_get_name(func));
@@ -564,10 +564,10 @@ Handle<Value> GIRObject::GetInterface(const Arguments &args)
     GIInterfaceInfo *interface = that->FindInterface(that->info, *iname);
     
     if (interface) {
-        printf("interface %s exists\n", *iname);
+        debug_printf("interface %s exists\n", *iname);
     }
     else {
-        printf("interface %s does NOT exist\n", *iname);
+        debug_printf("interface %s does NOT exist\n", *iname);
     }
     
     return scope.Close(Undefined());
@@ -586,10 +586,10 @@ Handle<Value> GIRObject::GetField(const Arguments &args)
     GIFieldInfo *field = that->FindField(that->info, *fname);
     
     if (field) {
-        printf("field %s exists\n", *fname);
+        debug_printf("field %s exists\n", *fname);
     }
     else {
-        printf("field %s does NOT exist\n", *fname);
+        debug_printf("field %s does NOT exist\n", *fname);
     }
     
     return scope.Close(Undefined());
@@ -642,10 +642,10 @@ Handle<Value> GIRObject::CallVFunc(const Arguments &args)
     GISignalInfo *vfunc = that->FindSignal(that->info, *fname);
     
     if (vfunc) {
-        printf("VFunc %s exists\n", *fname);
+        debug_printf("VFunc %s exists\n", *fname);
     }
     else {
-        printf("VFunc %s does NOT exist\n", *fname);
+        debug_printf("VFunc %s does NOT exist\n", *fname);
     }
     
     return scope.Close(Undefined());

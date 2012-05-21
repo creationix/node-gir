@@ -20,6 +20,7 @@ def build(bld):
   obj.target = "girepository"
   obj.source = [
     "src/init.cc",
+    "src/util.cc",
     "src/namespace_loader.cc",
     "src/arguments.cc",
     "src/function.cc",

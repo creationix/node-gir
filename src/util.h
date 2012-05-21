@@ -15,5 +15,6 @@
 #define EXCEPTION(str) \
     ThrowException(Exception::Error(String::New(str)));
 
+extern "C" void debug_printf(const char *fmt, ...);
 
 #endif
