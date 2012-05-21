@@ -111,7 +111,10 @@ Handle<Value> GIRObject::New(const Arguments &args)
         return scope.Close(args.This());
     }
 
-    String::AsciiValue className( args.This()->Get( String::New("__classname__")) );
+    //String::AsciiValue className( args.This()->Get( String::New("__classname__")) );
+    String::AsciiValue className(args.Callee()->GetName());
+    const char *_name = "";
+    printf ("CTR '%s' ('%s') \n", _name, *className); 
     /*v8::Handle<v8::External> info_handle =
         v8::Handle<v8::External>::Cast(args.This()->GetHiddenValue(String::New("GIInfo")));
     GIBaseInfo *info  = (GIBaseInfo*) info_handle->Value();
@@ -194,17 +197,81 @@ void GIRObject::DeleteParams(GParameter* params, int l)
 
 v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
 {
-    printf("GET HANDLER");
+    String::AsciiValue _name(name);
+    printf("GET HANDLER '%s' \n", *_name);
+
+    v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
+    GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
+    if (base_info != NULL) {
+        GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
+        // Check if we have property info
+        if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) {
+            printf("GET PROPERTY '%s' \n", *_name);
+            // Property is not readable
+            if (!(g_property_info_get_flags(prop_info) & G_PARAM_READABLE)) {
+                return EXCEPTION("property is not readable");
+            }
+            // Get GObject and its property
+            GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
+            GParamSpec *spec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
+            
+            GValue gvalue = {0,};
+            g_value_init(&gvalue, spec->value_type);
+            g_object_get_property(G_OBJECT(that->obj), *_name, &gvalue);
+            
+            Handle<Value> res = GIRValue::FromGValue(&gvalue);
+            g_value_unset(&gvalue);
+
+            return res;
+        }
+    }
+
+    // Fallback to defaults
+    v8::Handle<v8::Value> real = info.This()->GetPrototype()->ToObject()->Get(name);
+    if (!real->IsUndefined())
+        return real;
 }
 
 v8::Handle<v8::Integer> PropertyQueryHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
 {
-    printf("QUERY HANDLER");
+    String::AsciiValue _name(name);
+    printf("QUERY HANDLER '%s' \n", *_name);
 }
 
 v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Value > value, const v8::AccessorInfo &info) 
 {
-    printf("SET HANDLER");
+    String::AsciiValue _name(name);
+    printf("SET HANDLER '%s' \n", *_name);
+
+    v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
+    GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
+    if (base_info != NULL) {
+        GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
+        // Check if we have property info
+        if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) {
+            printf("SET PROPERTY '%s' \n", *_name);
+            // Property is not readable
+            if (!(g_property_info_get_flags(prop_info) & G_PARAM_WRITABLE)) {
+                return EXCEPTION("property is not readable");
+            }
+            // Get GObject and its property
+            GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
+            GParamSpec *spec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
+     
+            bool value_is_set = false;
+            GValue gvalue = {0,};
+            value_is_set = GIRValue::ToGValue(value, spec->value_type, &gvalue);
+            g_object_set_property(G_OBJECT(that->obj), *_name, &gvalue);
+            g_value_unset(&gvalue);
+          
+            return Boolean::New(value_is_set);
+        }
+    }
+
+    // Fallback to defaults
+    v8::Handle<v8::Value> real = info.This()->GetPrototype()->ToObject()->Get(name);
+    if (!real->IsUndefined())
+        return real;
 }
 
 void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) 
@@ -232,14 +299,10 @@ void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info)
     v8::Local<v8::ObjectTemplate> instance_t = t->InstanceTemplate();
     instance_t->SetInternalFieldCount(1);
     // Create external to hold GIBaseInfo and set it
-    //v8::Handle<v8::External> info_handle = v8::External::New((void*)g_base_info_ref(info));
+    v8::Handle<v8::External> info_handle = v8::External::New((void*)g_base_info_ref(info));
     // Set properties handlers
-    //instance_t->SetNamedPropertyHandler(PropertyGetHandler, PropertySetHandler, PropertyQueryHandler, 0, 0, info_handle);
-    
-    // to identify the object in the constructor
-    t->PrototypeTemplate()->Set(String::NewSymbol("__classname__"), String::New(name));
-    //t->PrototypeTemplate()->SetHiddenValue(String::New("GIInfo"), info_handle);
-    
+    instance_t->SetNamedPropertyHandler(PropertyGetHandler, PropertySetHandler, PropertyQueryHandler, 0, 0, info_handle);
+        
     t->Set(String::NewSymbol("__properties__"), PropertyList(info));
     t->Set(String::NewSymbol("__methods__"), MethodList(info));
     t->Set(String::NewSymbol("__interfaces__"), InterfaceList(info));
@@ -618,7 +681,10 @@ GIPropertyInfo *GIRObject::FindProperty(GIObjectInfo *inf, char *name)
     GIPropertyInfo *prop = g_object_info_find_property(inf, name);
     if (!prop) {
         GIObjectInfo *parent = g_object_info_get_parent(inf);
-        if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
+        if (!parent) 
+            return NULL;
+        if (parent != inf) {
+        //if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
             prop = FindProperty(parent, name);
         }
         g_base_info_unref(parent);
