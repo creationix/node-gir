@@ -184,7 +184,7 @@ function CallableMethod(methodName) {
       args[i] = args[i-1];
     args[0] = methodName;
     //call the method on the gir provided object
-    this.__call__.apply(this, args);
+    this.apply(this, args);
   };
   return invocation;
 }

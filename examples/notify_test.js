@@ -4,7 +4,7 @@ var notify = require('./notify');
 console.log(notify.init('notify_test.js sample application'));
 
 var n = new notify.Notification();
-var created = n.__call__('new', 'a', 'a', 'a', 'a');
+var created = n.new('a', 'a', 'a', 'a');
 
 for(var k in n) {
     console.log(k);
