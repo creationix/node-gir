@@ -44,24 +44,24 @@ suite.addBatch({
 		'integer' : {
 			topic: win, 
 			'set 1': function (topic) {
-				topic.default_height = 1;
-				assert.equal(topic.default_height, 1);
+				topic['default-height'] = 1;
+				assert.equal(topic['default-height'], 1);
 			},
 			'get 1': function (topic) {
-				assert.equal(topic.default_height, 1);
-				assert.notEqual(topic.default_height, 0);
-				assert.notEqual(topic.default_height, 2);
-				assert.notEqual(topic.default_height, -1);
+				assert.equal(topic['default-height'], 1);
+				assert.notEqual(topic['default-height'], 0);
+				assert.notEqual(topic['default-height'], 2);
+				assert.notEqual(topic['default-height'], -1);
 			}
 		},
 		'double' : {
 			topic: win, 
-			'set 12,3456': function (topic) {
-				topic.opacity = 12,3456;
-				assert.equal(topic.opacity, 12,3456);
+			'set 12,34': function (topic) {
+				topic.opacity = 12.34;
+				assert.equal(topic.opacity, 12.34);
 			},
-			'get 12,3456': function (topic) {
-				assert.equal(topic.opacity, 12,3456);
+			'get 12,34': function (topic) {
+				assert.equal(topic.opacity, 12.34);
 				assert.notEqual(topic.opacity, 0,001);
 				assert.notEqual(topic.opacity, 2);
 				assert.notEqual(topic.opacity, 1,23);
