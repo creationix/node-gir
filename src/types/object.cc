@@ -198,7 +198,6 @@ void GIRObject::DeleteParams(GParameter* params, int l)
 v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
 {
     String::AsciiValue _name(name);
-    debug_printf("GET HANDLER '%s' \n", *_name);
 
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
@@ -206,7 +205,6 @@ v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::A
         GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
         // Check if we have property info
         if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) {
-            debug_printf("GET PROPERTY '%s' \n", *_name);
             // Property is not readable
             if (!(g_property_info_get_flags(prop_info) & G_PARAM_READABLE)) {
                 return EXCEPTION("property is not readable");
@@ -215,6 +213,8 @@ v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::A
             GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
             GParamSpec *spec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
             
+            debug_printf("GetHandler (Get property) '%s.%s' \n", G_OBJECT_TYPE_NAME(that->obj), *_name);
+
             GValue gvalue = {0,};
             g_value_init(&gvalue, spec->value_type);
             g_object_get_property(G_OBJECT(that->obj), *_name, &gvalue);
@@ -241,23 +241,23 @@ v8::Handle<v8::Integer> PropertyQueryHandler(v8::Local<v8::String> name, const v
 v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Value > value, const v8::AccessorInfo &info) 
 {
     String::AsciiValue _name(name);
-    debug_printf("SET HANDLER '%s' \n", *_name);
 
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
     if (base_info != NULL) {
         GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
         // Check if we have property info
-        if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) {
-            debug_printf("SET PROPERTY '%s' \n", *_name);
+        if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) { 
             // Property is not writable
             if (!(g_property_info_get_flags(prop_info) & G_PARAM_WRITABLE)) {
-                return EXCEPTION("property is not readable");
+                return EXCEPTION("property is not writable");
             }
             // Get GObject and its property
             GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
             GParamSpec *spec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
      
+            debug_printf("SetHandler (Set property) '%s.%s' \n", G_OBJECT_TYPE_NAME(that->obj), *_name);
+
             bool value_is_set = false;
             GValue gvalue = {0,};
             value_is_set = GIRValue::ToGValue(value, spec->value_type, &gvalue);
@@ -435,7 +435,7 @@ Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args)
     debug_printf("Call Method: '%s' [%p] \n", *fname, func);
     
     if (func) {
-        debug_printf("Call symbol: '%s' \n", g_function_info_get_symbol(func));
+        debug_printf("\t Call symbol: '%s' \n", g_function_info_get_symbol(func));
         return scope.Close(Func::Call(that->obj, func, args, TRUE));
     }
     else {
@@ -453,10 +453,10 @@ Handle<Value> GIRObject::CallStaticMethod(const Arguments &args)
     v8::Handle<v8::External> info_ptr = 
         v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
     GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
-    debug_printf("CallStaticMethod '%s'.'%s'.'%s' \n",
-            g_base_info_get_namespace(func), 
-            g_function_info_get_symbol(func),
-            g_base_info_get_name(func));
+    debug_printf("Call static method '%s'.'%s' ('%s') \n",
+            g_base_info_get_namespace(func),
+            g_base_info_get_name(func), 
+            g_function_info_get_symbol(func));
     
     if (func) {
         return scope.Close(Func::Call(NULL, func, args, TRUE));
