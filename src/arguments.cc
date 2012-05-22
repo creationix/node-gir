@@ -127,7 +127,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
         arg->v_float = f;
         return true;
     }
-    if(tag == GI_TYPE_TAG_FLOAT) {
+    if(tag == GI_TYPE_TAG_DOUBLE) {
         if(!v->IsNumber()) {
             return false;
         }
