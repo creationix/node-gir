@@ -183,7 +183,12 @@ bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
     }
     else if(g_type_is_a(type, G_TYPE_DOUBLE)) {
         if(value->IsNumber()) {
-            g_value_set_double(v, value->NumberValue());
+            // Ugly, but seems to do the trick. 
+            // Feel free to rewrite.
+            GValue fval = {0, };
+            g_value_init(&fval, G_TYPE_STRING);
+            g_value_set_string(&fval, g_strdup_printf("%.2f", value->NumberValue()));
+            g_value_transform(&fval, v);
             return true;
         }
         else { return false; }
