@@ -250,7 +250,7 @@ v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Valu
         // Check if we have property info
         if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) {
             debug_printf("SET PROPERTY '%s' \n", *_name);
-            // Property is not readable
+            // Property is not writable
             if (!(g_property_info_get_flags(prop_info) & G_PARAM_WRITABLE)) {
                 return EXCEPTION("property is not readable");
             }
