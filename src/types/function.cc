@@ -33,7 +33,7 @@ Handle<Value> GIRFunction::Execute(const Arguments &args)
         v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
     GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
 
-    printf("EXECUTE namespace: '%s',  name: '%s', symbol: '%s' \n", 
+    debug_printf("EXECUTE namespace: '%s',  name: '%s', symbol: '%s' \n", 
             g_base_info_get_namespace(func),
             g_base_info_get_name(func),
             g_function_info_get_symbol(func));

@@ -2,6 +2,7 @@
 #include "util.h"
 
 #include "types/object.h"
+#include <stdlib.h>
 
 using namespace v8;
 
@@ -85,132 +86,113 @@ bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
     }
     
     g_value_init(v, type);
-    
-    if(g_type_is_a(type, G_TYPE_INTERFACE)) {
-        if(g_type_is_a(type, G_TYPE_OBJECT)) {
-            if(/* has instance */ true) {
+   
+    switch (G_TYPE_FUNDAMENTAL(type)) {
+        case G_TYPE_INTERFACE:
+        case G_TYPE_OBJECT:
+            if (value->IsObject()) {
                 g_value_set_object(v, node::ObjectWrap::Unwrap<GIRObject>(value->ToObject())->obj);
                 return true;
             }
-            else { return false; }
-        }
-    }
-    else if(g_type_is_a(type, G_TYPE_CHAR)) {
+
+        case G_TYPE_CHAR:
         if(value->IsString()) {
             String::Utf8Value str(value);
             g_value_set_char(v, (*str)[0]);
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_UCHAR)) {
+
+        case G_TYPE_UCHAR:
         if(value->IsString()) {
             String::Utf8Value str(value);
             g_value_set_uchar(v, (*str)[0]);
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_BOOLEAN)) {
+
+        case G_TYPE_BOOLEAN:
         if(value->IsBoolean()) {
             g_value_set_boolean(v, value->ToBoolean()->IsTrue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_INT)) {
+
+        case G_TYPE_INT:
         if(value->IsNumber()) {
-            g_value_set_int(v, value->NumberValue());
+            g_value_set_int(v, (gint)value->ToInt32()->Value()); 
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_UINT) || g_type_is_a(type, G_TYPE_GTYPE)) {
+
+        case G_TYPE_UINT: 
         if(value->IsNumber()) {
             g_value_set_uint(v, value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_LONG)) {
+
+        case G_TYPE_LONG:
         if(value->IsNumber()) {
             g_value_set_long(v, value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_ULONG)) {
+
+        case G_TYPE_ULONG:
         if(value->IsNumber()) {
             g_value_set_ulong(v, value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_INT64)) {
+
+        case G_TYPE_INT64:
         if(value->IsNumber()) {
             g_value_set_int64(v, value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_UINT64)) {
+
+        case G_TYPE_UINT64:
         if(value->IsNumber()) {
             g_value_set_uint64(v, value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_ENUM)) {
+
+        case G_TYPE_ENUM:
         if(value->IsNumber()) {
             g_value_set_enum(v, value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_FLAGS)) {
+
+        case G_TYPE_FLAGS:
         if(value->IsNumber()) {
             g_value_set_flags(v, value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_FLOAT)) {
+
+        case G_TYPE_FLOAT:
         if(value->IsNumber()) {
             g_value_set_float(v, value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_DOUBLE)) {
+
+        case G_TYPE_DOUBLE:
         if(value->IsNumber()) {
-            // Ugly, but seems to do the trick. 
-            // Feel free to rewrite.
-            GValue fval = {0, };
-            g_value_init(&fval, G_TYPE_STRING);
-            g_value_set_string(&fval, g_strdup_printf("%.2f", value->NumberValue()));
-            g_value_transform(&fval, v);
+            g_value_set_double(v, (gdouble)value->NumberValue());
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_STRING)) {
+
+        case G_TYPE_STRING:
         if(value->IsString()) {
             g_value_set_string(v, *String::Utf8Value(value->ToString()) );
             return true;
         }
-        else { return false; }
-    }
-    else if(g_type_is_a(type, G_TYPE_POINTER)) {
+
+        case G_TYPE_POINTER:
+        break;
         
-    }
-    else if(g_type_is_a(type, G_TYPE_BOXED)) {
+        case G_TYPE_BOXED:
+        break;
     
-    }
-    else if(g_type_is_a(type, G_TYPE_PARAM)) {
-    
-    }
-    else if(g_type_is_a(type, G_TYPE_OBJECT)) {
-    
+        case G_TYPE_PARAM:
+        break;
+
+        default:
+        // Transform to correct type
+        break;
     }
     return false;
 }
