@@ -14,134 +14,62 @@ namespace gir {
 bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
     GITypeInfo *type = g_arg_info_get_type(info);
     GITypeTag tag = ReplaceGType(g_type_info_get_tag(type));
-    
-    
+
+    // nullify string so it be freed safely later 
+    arg->v_string = NULL;
+
     if( ( v == Null() || v == Undefined() ) && g_arg_info_may_be_null(info) ||
         tag == GI_TYPE_TAG_VOID) {
         arg->v_pointer = NULL;
         return true;
     }
     if(tag == GI_TYPE_TAG_BOOLEAN) {
-        if(!v->IsBoolean()) {
-            return false;
-        }
-        arg->v_boolean = v->ToBoolean()->IsTrue();
+        arg->v_boolean = v->ToBoolean()->Value();
         return true;
     }
     if(tag == GI_TYPE_TAG_INT8) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gint i = v->ToNumber()->NumberValue();
-        if(i > G_MAXINT8 || i < G_MININT8) {
-            return false;
-        }
-        arg->v_int8 = i;
+        arg->v_int8 = v->ToNumber()->NumberValue();
         return true;
     }
     if(tag == GI_TYPE_TAG_UINT8) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gint i = v->ToNumber()->NumberValue();
-        if(i > G_MAXUINT8 || i < 0) {
-            return false;
-        }
-        arg->v_int8 = i;
+        arg->v_uint8 = v->ToNumber()->NumberValue();
         return true;
     }
     if(tag == GI_TYPE_TAG_INT16) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gint i = v->ToNumber()->NumberValue();
-        if(i > G_MAXINT16 || i < G_MININT16) {
-            return false;
-        }
-        arg->v_int16 = i;
+        arg->v_int16 = v->ToNumber()->NumberValue();
         return true;
     }
     if(tag == GI_TYPE_TAG_UINT16) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gint i = v->ToNumber()->NumberValue();
-        if(i > G_MAXUINT16 || i < 0) {
-            return false;
-        }
-        arg->v_int16 = i;
+        arg->v_uint16 = v->ToNumber()->NumberValue();
         return true;
     }
     if(tag == GI_TYPE_TAG_INT32) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gint i = v->ToNumber()->NumberValue();
-        if(i > G_MAXINT32 || i < G_MININT32) {
-            return false;
-        }
-        arg->v_int32 = i;
+        arg->v_int32 = v->ToInt32()->Value();
         return true;
     }
     if(tag == GI_TYPE_TAG_UINT32) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gint i = v->ToNumber()->NumberValue();
-        if(i > G_MAXUINT32 || i < 0) {
-            return false;
-        }
-        arg->v_int32 = i;
+        arg->v_uint32 = v->ToUint32()->Value();
         return true;
     }
     if(tag == GI_TYPE_TAG_INT64) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gint i = v->ToNumber()->NumberValue();
-        if(i > G_MAXINT64 || i < G_MININT64) {
-            return false;
-        }
-        arg->v_int64 = i;
+        arg->v_int64 = v->ToInteger()->Value();
         return true;
     }
     if(tag == GI_TYPE_TAG_UINT64) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gint i = v->ToNumber()->NumberValue();
-        if(i > G_MAXUINT64 || i < 0) {
-            return false;
-        }
-        arg->v_int64 = i;
+        arg->v_uint64 = v->ToInteger()->Value();
         return true;
     }
     if(tag == GI_TYPE_TAG_FLOAT) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        gfloat f = v->ToNumber()->NumberValue();
-        if(f > G_MAXFLOAT || f < -G_MAXFLOAT) {
-            return false;
-        }
-        arg->v_float = f;
+        arg->v_float = v->ToNumber()->Value();
         return true;
     }
     if(tag == GI_TYPE_TAG_DOUBLE) {
-        if(!v->IsNumber()) {
-            return false;
-        }
-        arg->v_double = v->ToNumber()->NumberValue();
+        arg->v_double = v->ToNumber()->Value();
         return true;
     }
     if(tag == GI_TYPE_TAG_UTF8 || tag == GI_TYPE_TAG_FILENAME) {
-        if(!v->IsString()) { return false; }
         String::Utf8Value v8str(v->ToString());
-        // FIXME: I've to free this somewhere
-        char *str = new char[v->ToString()->Length()];
-        strcpy(str, *v8str);
-        
-        arg->v_string = str;
+        arg->v_string = g_strdup(*v8str);
         return true;
     }
     if(tag == GI_TYPE_TAG_GLIST) {
