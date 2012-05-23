@@ -10,6 +10,7 @@ var gtk = require("./gtk");
 gtk.init(0);
 
 var gdkPixbuf = require("./gdkPixbuf");
+var glib = require("./glib");
 
 var objects = require('./objects');
 var win = objects.win;
@@ -34,12 +35,23 @@ suite.addBatch({
 				assert.notEqual(title, "");
 				assert.notEqual(title, null);
 
+			},
+			'integer': function (topic) {
+				var txt = "abcd";
+				var length;
+				var decoded = glib.base64_decode(txt, length);
+				assert.notEqual(length, 0);
+				assert.equal(length, 4);
 			}
 		},
 		'in out' : {
 			topic: win, 
-			'todo': function (topic) {	
-				assert.equal("TODO", "DONE");
+			'integer': function (topic) {
+				var txt = "abcd";
+				var length;
+				var decoded = glib.base64_decode_inplace(txt, length);
+				assert.notEqual(length, 0);
+				assert.equal(length, 4);
 			}
 		}
 	}
