@@ -14,7 +14,10 @@ static GIArgument *_gir_gi_argument_new(GObject *obj, int length)
         return NULL;
 
     GIArgument *args = g_new0(GIArgument, length);
-    args[0].v_string = NULL;
+    for (int i = 0; i < length; i++) {
+        args[i].v_string = NULL;
+    }
+
     if (obj != NULL) 
         args[0].v_pointer = obj;
 
@@ -27,7 +30,7 @@ static void _gir_gi_argument_free(GIArgument *args, int length)
         return;
 
     for (int i = 0; i < length; i++) {
-        g_free(args[i].v_string); 
+        //g_free(args[i].v_string); FIXME, it has to be freed
     }
     g_free(args);
     args = NULL;
@@ -53,6 +56,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
     int l = g_callable_info_get_n_args(info);
     int in_argc_c_length = offset_, out_argc_c_length = 0;
     int required_arguments = l;
+    int optional_arguments = 0;
     GIArgInfo *arg = NULL;
     GITypeInfo *arg_type_info = NULL;
     GIDirection dir;
@@ -78,20 +82,31 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         // Compute number of required arguments
         // Any out and error argument should be implicit
         arg_type_info = g_arg_info_get_type(arg);
+        bool is_optional = g_arg_info_is_optional(arg);
+        bool may_be_null = g_arg_info_may_be_null(arg);
         if (g_type_info_get_tag(arg_type_info) == GI_TYPE_TAG_ERROR
                 || g_arg_info_get_direction(arg) == GI_DIRECTION_OUT
-                || g_arg_info_is_optional(arg)
-                || g_arg_info_may_be_null(arg)) {
+                || is_optional == TRUE 
+                || may_be_null == TRUE ) {
             required_arguments--;
         }
+
+        if (is_optional) 
+            optional_arguments++;
+
+        if (may_be_null)
+            optional_arguments++;
+
         g_base_info_unref(arg_type_info);
         g_base_info_unref(arg);
     }
     debug_printf("(%d) in_argc_c_length is %d, out_argc_c_length is %d, offset is %d\n", l, in_argc_c_length, out_argc_c_length, offset_);
     
     if (args.Length() != required_arguments) {
-        char *exc_msg = g_strdup_printf("Invalid number of arguments. Expected %d, got %d", required_arguments, args.Length());
-        return ThrowException(Exception::TypeError(String::New(exc_msg)));
+        if (args.Length() != CLAMP(args.Length(), required_arguments, required_arguments + optional_arguments)) {
+            char *exc_msg = g_strdup_printf("Invalid number of arguments. Expected %d, got %d", required_arguments, args.Length());
+            return ThrowException(Exception::TypeError(String::New(exc_msg)));
+        }
     }
 
     GIArgument *in_args = _gir_gi_argument_new(obj, in_argc_c_length);
@@ -116,7 +131,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
             if(!Args::ToGType(args[real_arg_idx], &in_args[in_c], arg, FALSE)) {
                 return BAD_ARGS("IN arguments conversion failed");
             }
-            printf("IN ARG (%d) '%s' \n", in_c, in_args[in_c].v_string);
+            //printf("IN ARG (%d) '%s' \n", in_c, in_args[in_c].v_string);
             in_c++;
         }
         if(dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT) { 
@@ -138,7 +153,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         //printf ("OUT ARG[%d](%d) (%d) '%s' \n", n, out_argc_c_length, out_args[n].v_uint32, "" /* out_args[n].v_string */);
     }
     for (n = 0; n < in_argc_c_length; n++) {
-        printf ("IN ARG[%d](%d) (%s) \n", n, in_argc_c_length, in_args[n].v_string);
+        //printf ("IN ARG[%d](%d) (%s) \n", n, in_argc_c_length, in_args[n].v_string);
     }
 
     gboolean invoked = g_function_info_invoke(info, in_args, in_argc_c_length, out_args, out_argc_c_length, &retval, &error);
@@ -170,8 +185,8 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
 
     if (returned_type_info != NULL)
         g_base_info_unref(returned_type_info);
-    g_free(in_args);
-    g_free(out_args);
+    _gir_gi_argument_free(in_args, in_argc_c_length);
+    _gir_gi_argument_free(out_args, out_argc_c_length);
     g_free(out_args_c);
 
     return return_value;
