@@ -88,7 +88,14 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, bool out) 
         return false;
     }
     if(tag == GI_TYPE_TAG_ARRAY) {
-        if(!v->IsArray()) { return false; }
+        if(!v->IsArray()) {
+            if (v->IsString()) {
+                String::Utf8Value _str(v->ToString());
+                arg->v_pointer = (gpointer *) g_strdup(*_str);
+                return true;
+            }
+            return false; 
+        }
         
         GIArrayType arr_type = g_type_info_get_array_type(info);
         
@@ -184,13 +191,25 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
 
     g_base_info_unref(param_info);
 
+    int i = 0;
+    v8::Local<v8::Array> arr;
+
     switch(param_tag) {
         case GI_TYPE_TAG_UINT8:
             if (arg->v_pointer == NULL)
                 return String::New("");
-            // TODO, copy bytes
-            return String::New((char *)arg->v_pointer); 
-            break;
+            // TODO, copy bytes to array
+            // http://groups.google.com/group/v8-users/browse_thread/thread/8c5177923675749e?pli=1
+            return String::New((char *)arg->v_pointer, array_length); 
+            
+        case GI_TYPE_TAG_GTYPE:
+            if (arg->v_pointer == NULL)
+                return v8::Array::New(0);
+            arr = v8::Array::New(array_length);
+            for (i = 0; i < array_length; i++) { 
+                arr->Set(i, v8::Integer::New((int)((gpointer*)arg->v_pointer)[i]));
+            }
+            return arr;
 
         default:
             gchar *exc_msg = g_strdup_printf("Converting array of '%s' is not supported", g_type_tag_to_string(param_tag));
