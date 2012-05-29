@@ -11,6 +11,7 @@ gtk.init(0);
 
 var gdkPixbuf = require("./gdkPixbuf");
 var glib = require("./glib");
+var gobject = require("./gobject");
 
 var objects = require('./objects');
 var win = objects.win;
@@ -20,9 +21,24 @@ suite.addBatch({
 	'Argument' : {
 		'in' : {
 			topic: win, 
-			'set_property': function (topic) {
+			'integer': function (topic) {
+				topic.set_property("default_height", 1);
+			},
+			'string': function (topic) {
+				topic.set_property("title", "Lancelot");
+			},
+			'boolean': function (topic) {
 				topic.set_property("modal", true);
-				assert.isTrue(topic.get_modal());
+			},
+			'double': function (topic) {
+                assert.equal("TODO", "DONE");
+			},
+			'null': function (topic) {
+                topic.set_icon(null);
+			},
+			'object': function (topic) {
+                pixbuf = new gdkPixbuf.Pixbuf(0, false, 1, 1, 1);
+                topic.set_icon(pixbuf);
 			}
 		},
 		'out' : {
@@ -37,21 +53,21 @@ suite.addBatch({
 
 			},
 			'integer': function (topic) {
-				var txt = "abcd";
-				var length;
-				var decoded = glib.base64_decode(txt, length);
-				assert.notEqual(length, 0);
-				assert.equal(length, 4);
+                var type = gobject.type_from_name("GtkWindow");
+                var children = gobject.type_children(type); // hidden, implicit array length
+                assert.isNotNull(children);
+				assert.notEqual(children.length, 0);
+                assert.include(children, gobject.type_from_name("GtkDialog"));
+                assert.include(children, gobject.type_from_name("GtkApplicationWindow"));
+                assert.include(children, gobject.type_from_name("GtkAssistant"));
+                assert.include(children, gobject.type_from_name("GtkPlug"));
+                assert.include(children, gobject.type_from_name("GtkOffscreenWindow"));
 			}
 		},
 		'in out' : {
 			topic: win, 
 			'integer': function (topic) {
-				var txt = "abcd";
-				var length;
-				var decoded = glib.base64_decode_inplace(txt, length);
-				assert.notEqual(length, 0);
-				assert.equal(length, 4);
+                assert.equal("TODO", "DONE");
 			}
 		}
 	}
