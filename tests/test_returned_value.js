@@ -22,50 +22,70 @@ suite.addBatch({
         'integer' : {
             topic: win, 
             'integer': function (topic) {
-                assert.equal("TODO", "DONE");
+                var int_value = gobject.type_from_name("GtkWindow");
+                assert.isNumber(int_value);
             }
         },
         'char' : {
             topic: win, 
-            'integer': function (topic) {
-                assert.equal("TODO", "DONE");
+            'char': function (topic) {
+                topic.set_title("Lancelot");
+                var char_value = topic.get_title();
+                assert.isString(char_value);
             }
         },
         'double' : {
             topic: win, 
-            'integer': function (topic) {
+            'double': function (topic) {
                 assert.equal("TODO", "DONE");
             }
         },
         'boolean' : {
             topic: win, 
-            'integer': function (topic) {
-                assert.equal("TODO", "DONE");
+            'bool': function (topic) {
+                var boolean_value = topic.is_active();
+                assert.isBoolean(boolean_value);
             }
         },
         'GValue' : {
             topic: win, 
-            'integer': function (topic) {
-                assert.equal("TODO", "DONE");
-            }
-        },
-        'object' : {
-            topic: win, 
-            'integer': function (topic) {
+            'GValue': function (topic) {
                 assert.equal("TODO", "DONE");
             }
         },
         'null' : {
             topic: win, 
-            'integer': function (topic) {
-                assert.equal("TODO", "DONE");
+            'null': function (topic) {
+                var null_value = topic.get_icon();
+                assert.isNull(null_value);
+            }
+        },
+        'object' : {
+            topic: win, 
+            'object': function (topic) {
+                pixbuf = new gdkPixbuf.Pixbuf(0, false, 1, 1, 1);
+                topic.set_icon(pixbuf);
+                var object_value = topic.get_icon();
+                assert.isObject(object_value);
             }
         },
         'void' : {
             topic: win, 
-            'integer': function (topic) {
-                assert.equal("TODO", "DONE");
+            'void': function (topic) {
+                var void_value = topic.set_icon(null);
+                assert.isUndefined(void_value);
             }
         },
+        'array' : {
+            topic: win, 
+            'GType': function (topic) {
+                var type = gobject.type_from_name("GtkWindow");
+                var gtype_array = gobject.type_children(type);
+                assert.isArray(gtype_array);
+            },
+            'Object': function (topic) {
+                assert.equal("TODO", "DONE");
+            }
+        }
     }
 }).export(module);
