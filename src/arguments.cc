@@ -11,12 +11,15 @@ using namespace v8;
 
 namespace gir {
 
-bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
+bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, bool out) {
     GITypeInfo *type = g_arg_info_get_type(info);
     GITypeTag tag = ReplaceGType(g_type_info_get_tag(type));
 
     // nullify string so it be freed safely later 
     arg->v_string = NULL;
+
+    if (out == TRUE)
+        return true;
 
     if( ( v == Null() || v == Undefined() ) && g_arg_info_may_be_null(info) ||
         tag == GI_TYPE_TAG_VOID) {
@@ -172,9 +175,32 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info) {
     return false;
 }
 
-Handle<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type) {
+Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_length) {
     GITypeTag tag = g_type_info_get_tag(type);
-    
+
+    GITypeInfo *param_info = g_type_info_get_param_type(type, 0);
+    bool is_zero_terminated = g_type_info_is_zero_terminated(param_info);
+    GITypeTag param_tag = g_type_info_get_tag(param_info);
+
+    g_base_info_unref(param_info);
+
+    switch(param_tag) {
+        case GI_TYPE_TAG_UINT8:
+            if (arg->v_pointer == NULL)
+                return String::New("");
+            // TODO, copy bytes
+            return String::New((char *)arg->v_pointer); 
+            break;
+
+        default:
+            gchar *exc_msg = g_strdup_printf("Converting array of '%s' is not supported", g_type_tag_to_string(param_tag));
+            return EXCEPTION(exc_msg); 
+    }
+}
+
+Handle<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type, int array_length) {
+    GITypeTag tag = g_type_info_get_tag(type);
+
     if(tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *interface_info = g_type_info_get_interface(type);
         g_assert(interface_info != NULL);
@@ -250,7 +276,7 @@ Handle<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type) {
         case GI_TYPE_TAG_FILENAME:
             return String::New(arg->v_string);
         case GI_TYPE_TAG_ARRAY:
-            return Undefined();
+            return Args::FromGTypeArray(arg, type, array_length);
         case GI_TYPE_TAG_INTERFACE:
             return Undefined();
         case GI_TYPE_TAG_GLIST:
@@ -287,7 +313,7 @@ bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GList **list_p) {
     int l = arr->Length();
     for(int i=0; i<l; i++) {
         GIArgument arg = {0,};
-        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0) )) {
+        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0), FALSE)) {
             return false;
         }
         list = g_list_prepend(list, arg.v_pointer);
@@ -305,7 +331,7 @@ bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GSList **slist_p) {
     int l = arr->Length();
     for(int i=0; i<l; i++) {
         GIArgument arg = {0,};
-        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0) )) {
+        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0), FALSE)) {
             return false;
         }
         slist = g_slist_prepend(slist, arg.v_pointer);
