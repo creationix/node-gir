@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+	<type name="gir_test_book_store" table="gir_test_book_store">
+		<property name="id" type="unsigned integer" primaryfield="id"/>
+		<property name="name" type="string" field="name_field"/>
+	</type>
+	<type name="gir_test_book_author" table="gir_test_book_author">
+		<property name="id" type="unsigned integer" primaryfield="id"/>
+		<property name="firstname" type="string" field="firstname_field"/>
+		<property name="lastname" type="string" field="lastname_field"/>
+	</type>
+	<type name="gir_test_book_crud" table="gir_test_book_crud">
+		<property name="id" type="unsigned integer" primaryfield="id"/>
+		<property name="title" type="string" field="title_field"/>
+		<property name="author" type="string" field="author_field"/>
+		<property name="authorid" type="unsigned integer" link="gir_test_book_author:id"/>
+		<property name="store" type="unsigned integer" link="gir_test_book_store:id" parentfield="store_field"/>
+		<property name="price" type="float" field="price_field"/>
+		<property name="serial" type="guid" field="serial_field"/>
+		<property name="edition" type="unsigned integer" field="edition_field"/>
+		<property name="sold" type="bool" field="sold_field"/>
+		<property name="description" type="text" field="description_field"/>
+  </type>
+</Schema>
