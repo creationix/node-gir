@@ -21,21 +21,19 @@ mgd.open_config(config);
 Midgard.Storage.create_base_storage(mgd);
 
 var test_midgard_bookstore = Midgard.Object.factory(mgd, "gir_test_book_store");
-test_midgard_bookstore.set_property("name", "BookStore");
+test_midgard_bookstore.name = "BookStore";
 test_midgard_bookstore.create();
 
-console.log(test_midgard_bookstore.id);
-
 var test_midgard_book = Midgard.Object.factory(mgd, "gir_test_book_crud");
-test_midgard_book.set_property("title", "The Holly Grail");
-test_midgard_book.set_property("author", "Sir Lancelot");
-test_midgard_book.set_property("price", 99.99);
-test_midgard_book.set_property("serial", Midgard.Guid.new(mgd));
-test_midgard_book.set_property("edition", 1);
-test_midgard_book.set_property("sold", false)
-test_midgard_book.set_property("description", "The true story of white rabbit")
-//test_midgard_book.set_property("store", test_midgard_bookstore.id)
+test_midgard_book.title = "The Holly Grail";
+test_midgard_book.author = "Sir Lancelot";
+test_midgard_book.price = 99.99;
+test_midgard_book.serial = Midgard.Guid.new(mgd);
+test_midgard_book.edition = 1;
+test_midgard_book.sold = false;
+test_midgard_book.description = "The true story of white rabbit";
+test_midgard_book.store = test_midgard_bookstore.id;
 
-exports.midgard_bookstore = test_midgard_bookstore;
-exports.midgard_book = test_midgard_book;
+exports.TestBookstore = test_midgard_bookstore;
+exports.TestBook = test_midgard_book;
 exports.cnc = mgd;
