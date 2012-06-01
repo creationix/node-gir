@@ -60,7 +60,8 @@ Handle<Value> GIRValue::FromGValue(GValue *v) {
         value = Number::New(g_value_get_double(v));
     }
     else if(g_type_is_a(type, G_TYPE_STRING)) {
-        value = String::New(g_value_get_string(v));
+        const char *tmpstr = g_value_get_string(v);
+        value = String::New(tmpstr ? tmpstr : "");
     }
     else if(g_type_is_a(type, G_TYPE_POINTER)) {
     

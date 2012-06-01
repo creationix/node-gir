@@ -198,18 +198,12 @@ void GIRObject::DeleteParams(GParameter* params, int l)
 v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
 {
     String::AsciiValue _name(name);
-
+printf ("GET HANDLER '%s' \n", *_name);
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
     if (base_info != NULL) {
-        GParamSpec *pspec = NULL;
-        GIRObject *that;
-        GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
-        if (prop_info == NULL || !GI_IS_PROPERTY_INFO(prop_info)) {
-            // Fallback to param spec
-            that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
-            pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
-        }
+        GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
+        GParamSpec *pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
         if (pspec) {
             // Property is not readable
             if (!(pspec->flags & G_PARAM_READABLE)) {
@@ -248,14 +242,8 @@ v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Valu
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
     if (base_info != NULL) {
-        GParamSpec *pspec = NULL;
-        GIRObject *that;
-        GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
-        if (prop_info == NULL || !GI_IS_PROPERTY_INFO(prop_info)) {
-            // Fallback to param spec
-            that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
-            pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
-        }
+        GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
+        GParamSpec *pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
         if (pspec) {
             // Property is not readable
             if (!(pspec->flags & G_PARAM_WRITABLE)) {
