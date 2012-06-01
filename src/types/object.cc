@@ -202,21 +202,24 @@ v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::A
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
     if (base_info != NULL) {
+        GParamSpec *pspec = NULL;
+        GIRObject *that;
         GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
-        // Check if we have property info
-        if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) {
+        if (prop_info == NULL || !GI_IS_PROPERTY_INFO(prop_info)) {
+            // Fallback to param spec
+            that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
+            pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
+        }
+        if (pspec) {
             // Property is not readable
-            if (!(g_property_info_get_flags(prop_info) & G_PARAM_READABLE)) {
+            if (!(pspec->flags & G_PARAM_READABLE)) {
                 return EXCEPTION("property is not readable");
             }
-            // Get GObject and its property
-            GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
-            GParamSpec *spec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
             
             debug_printf("GetHandler (Get property) '%s.%s' \n", G_OBJECT_TYPE_NAME(that->obj), *_name);
 
             GValue gvalue = {0,};
-            g_value_init(&gvalue, spec->value_type);
+            g_value_init(&gvalue, pspec->value_type);
             g_object_get_property(G_OBJECT(that->obj), *_name, &gvalue);
             
             Handle<Value> res = GIRValue::FromGValue(&gvalue);
@@ -245,22 +248,25 @@ v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Valu
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
     if (base_info != NULL) {
+        GParamSpec *pspec = NULL;
+        GIRObject *that;
         GIPropertyInfo *prop_info = GIRObject::FindProperty(base_info, *_name);
-        // Check if we have property info
-        if (prop_info != NULL && GI_IS_PROPERTY_INFO(prop_info)) { 
-            // Property is not writable
-            if (!(g_property_info_get_flags(prop_info) & G_PARAM_WRITABLE)) {
+        if (prop_info == NULL || !GI_IS_PROPERTY_INFO(prop_info)) {
+            // Fallback to param spec
+            that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
+            pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
+        }
+        if (pspec) {
+            // Property is not readable
+            if (!(pspec->flags & G_PARAM_WRITABLE)) {
                 return EXCEPTION("property is not writable");
             }
-            // Get GObject and its property
-            GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(info.This()->ToObject());
-            GParamSpec *spec = g_object_class_find_property(G_OBJECT_GET_CLASS(that->obj), *_name);
      
             debug_printf("SetHandler (Set property) '%s.%s' \n", G_OBJECT_TYPE_NAME(that->obj), *_name);
 
             bool value_is_set = false;
             GValue gvalue = {0,};
-            value_is_set = GIRValue::ToGValue(value, spec->value_type, &gvalue);
+            value_is_set = GIRValue::ToGValue(value, pspec->value_type, &gvalue);
             g_object_set_property(G_OBJECT(that->obj), *_name, &gvalue);
             g_value_unset(&gvalue);
           
@@ -269,9 +275,7 @@ v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Valu
     }
 
     // Fallback to defaults
-    v8::Handle<v8::Value> real = info.This()->GetPrototype()->ToObject()->Get(name);
-    if (!real->IsUndefined())
-        return real;
+    return v8::Boolean::New(info.This()->GetPrototype()->ToObject()->Set(name, value));
 }
 
 void GIRObject::Prepare(Handle<Object> target, GIObjectInfo *info) 
