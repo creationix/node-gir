@@ -198,7 +198,6 @@ void GIRObject::DeleteParams(GParameter* params, int l)
 v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
 {
     String::AsciiValue _name(name);
-printf ("GET HANDLER '%s' \n", *_name);
     v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
     if (base_info != NULL) {
@@ -224,9 +223,7 @@ printf ("GET HANDLER '%s' \n", *_name);
     }
 
     // Fallback to defaults
-    v8::Handle<v8::Value> real = info.This()->GetPrototype()->ToObject()->Get(name);
-    if (!real->IsUndefined())
-        return real;
+    return info.This()->GetPrototype()->ToObject()->Get(name);
 }
 
 v8::Handle<v8::Integer> PropertyQueryHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
