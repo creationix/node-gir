@@ -20,6 +20,9 @@ suite.addBatch({
             topic : function () {
                 return MidgardTest.TestBook.create()
             },
+            'check error' : function (topic) {
+                assert.equal(MidgardTest.cnc.get_error_string(), "MGD_ERR_OK");
+            },	
             'is created' : function (topic) {
                 assert.isTrue(topic);
             },	
@@ -32,6 +35,9 @@ suite.addBatch({
                 MidgardTest.TestBook.name = "The Holy Grail 2";
                 return MidgardTest.TestBook.update()
             },
+            'check error' : function (topic) {
+                assert.equal(MidgardTest.cnc.get_error_string(), "MGD_ERR_OK");
+            },	
             'is updated' : function (topic) {
                 assert.isTrue(topic);
             },	
@@ -43,15 +49,32 @@ suite.addBatch({
             topic : function () { 
                 return MidgardTest.TestBook.delete(false)
             },
+            'check error' : function (topic) {
+                assert.equal(MidgardTest.cnc.get_error_string(), "MGD_ERR_OK");
+            },	
             'is deleted' : function (topic) {
                 assert.isTrue(topic);
             }
         },
-        'Purge' : {
+        'Purge Book' : {
             topic : function () {
                 MidgardTest.TestBook.create();
                 return MidgardTest.TestBook.purge(false)
             },
+            'check error' : function (topic) {
+                assert.equal(MidgardTest.cnc.get_error_string(), "MGD_ERR_OK");
+            },	
+            'is purged' : function (topic) {
+                assert.isTrue(topic);
+            }	
+        },
+        'Purge BookStore' : {
+            topic : function () {
+                return MidgardTest.TestBookStore.purge(false)
+            },
+            'check error' : function (topic) {
+                assert.equal(MidgardTest.cnc.get_error_string(), "MGD_ERR_OK");
+            },	
             'is purged' : function (topic) {
                 assert.isTrue(topic);
             }	
