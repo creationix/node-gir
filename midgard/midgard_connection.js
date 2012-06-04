@@ -34,6 +34,6 @@ test_midgard_book.sold = false;
 test_midgard_book.description = "The true story of white rabbit";
 test_midgard_book.store = test_midgard_bookstore.id;
 
-exports.TestBookstore = test_midgard_bookstore;
+exports.TestBookStore = test_midgard_bookstore;
 exports.TestBook = test_midgard_book;
 exports.cnc = mgd;
