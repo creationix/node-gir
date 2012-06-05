@@ -11,7 +11,11 @@ namespace gir {
 Handle<Value> GIRValue::FromGValue(GValue *v) {
     GType type = G_VALUE_TYPE(v);
     Handle<Value> value = Undefined();
-    
+   
+    printf("FROM GVALUE '%s' FUNDAMENTAL '%s' \n",
+            g_type_name(type), 
+            g_type_name(G_TYPE_FUNDAMENTAL(type)));
+
     if(g_type_is_a(type, G_TYPE_CHAR)) {
         char *str = new char[2];
         str[0] = g_value_get_char(v);

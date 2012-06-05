@@ -3,6 +3,7 @@
 
 #include "types/object.h"
 #include "types/function.h"
+#include "types/struct.h"
 
 #include <string.h>
 
@@ -74,7 +75,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
             case GI_INFO_TYPE_BOXED:
                 //FIXME: GIStructInfo or GIUnionInfo
             case GI_INFO_TYPE_STRUCT:
-                ParseStruct((GIStructInfo*)info, exports);
+                GIRStruct::Prepare(exports, (GIStructInfo*)info);
                 break;
             case GI_INFO_TYPE_ENUM:
                 ParseEnum((GIEnumInfo*)info, exports);
@@ -100,6 +101,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
     
     // when all classes have been created we can inherit them
     GIRObject::Initialize(exports, namespace_);
+    GIRStruct::Initialize(exports, namespace_);
     
     return exports;
 }

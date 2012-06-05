@@ -26,6 +26,7 @@ def build(bld):
     "src/function.cc",
     "src/values.cc",
     "src/types/object.cc",
+    "src/types/struct.cc",
     "src/types/function.cc"
   ]
   obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
