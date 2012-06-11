@@ -15,6 +15,17 @@ var MidgardTest = require('./midgard_connection');
 
 var suite = vows.describe('Midgard.Timestamp');
 suite.addBatch({
+    'ISO 8601' : {
+        'new from iso' : {
+            topic : "2012-06-07 14:35:00+0000",
+            'is new' : function (topic) {
+                assert.equal("TODO", "DONE");
+                //var ts = Midgard.Timestamp.new_from_iso8601(topic);
+                //assert.isObject(ts);
+                //assert.equal(ts.get_string(), "2012-06-07 14:35:00+0000");
+            }	
+        }
+    },
     'Get Default' : {
         'Year' : {
             topic : MidgardTest.TimeStamp,
