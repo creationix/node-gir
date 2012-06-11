@@ -37,3 +37,4 @@ test_midgard_book.store = test_midgard_bookstore.id;
 exports.TestBookStore = test_midgard_bookstore;
 exports.TestBook = test_midgard_book;
 exports.cnc = mgd;
+exports.TimeStamp = new Midgard.Timestamp();
