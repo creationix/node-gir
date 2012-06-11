@@ -312,7 +312,7 @@ void GIRStruct::Prepare(Handle<Object> target, GIStructInfo *info)
     // Set fields handlers
     instance_t->SetNamedPropertyHandler(FieldGetHandler, FieldSetHandler, FieldQueryHandler, 0, 0, info_handle);
 
-    //RegisterMethods(target, info, namespace_, t);
+    RegisterMethods(target, info, namespace_, t);
 }
 
 void GIRStruct::Initialize(Handle<Object> target, char *namespace_) 
@@ -377,21 +377,17 @@ Handle<Value> GIRStruct::CallMethod(const Arguments &args)
 {
     HandleScope scope;
     
-    if (args.Length() < 1 || !args[0]->IsString()) {
-        return BAD_ARGS("Invalid argument's number or type");
-    }
-    
-    /*String::Utf8Value fname(args[0]);
+    v8::String::AsciiValue fname(args.Callee()->GetName());
     GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(args.This()->ToObject());
-    GIFunctionInfo *func = that->FindMethod(that->info, *fname);
-    
+    GIFunctionInfo *func = g_struct_info_find_method(that->info, *fname);
+    debug_printf("Call Method: '%s' [%p] \n", *fname, func);
     if (func) {
-        return scope.Close(Func::Call(that->obj, func, args, FALSE));
+        debug_printf("\t Call symbol: '%s' \n", g_function_info_get_symbol(func));
+        return scope.Close(Func::Call((GObject *)that->structure, func, args, TRUE));
     }
     else {
         return EXCEPTION("no such method");
-    }*/
-    
+    }
     return scope.Close(Undefined());
 }
 
@@ -461,53 +457,30 @@ Handle<Object> GIRStruct::MethodList(GIObjectInfo *info)
     return list;
 }
 
-void GIRStruct::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const char *namespace_, Handle<FunctionTemplate> t) 
-{
-    bool first = true;
-    int gcounter = 0;
-    g_base_info_ref(info);
-    GIObjectInfo *src_info = info;
-    
-    while (true) {
-        if (!first) {
-            GIObjectInfo *parent = g_object_info_get_parent(info);
-            if (!parent) {
-                g_base_info_unref(info);
-                return;
-            }
-            if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
-                g_base_info_unref(info);
-                return;
-            }
-            g_base_info_unref(info);
-            info = parent;
+void GIRStruct::RegisterMethods(Handle<Object> target, GIStructInfo *info, const char *namespace_, Handle<FunctionTemplate> t) 
+{   
+    int l = g_struct_info_get_n_methods(info);
+    for (int i=0; i<l; i++) {
+        GIFunctionInfo *func = g_struct_info_get_method(info, i);
+        const char *func_name = g_base_info_get_name(func);
+        GIFunctionInfoFlags func_flag = g_function_info_get_flags(func);
+        // Determine if method is static one.
+        // If given function is neither method nor constructor, it's most likely static method.
+        // In such case, do not set prototype method.
+        if (func_flag & GI_FUNCTION_IS_METHOD) { 
+            NODE_SET_PROTOTYPE_METHOD(t, func_name, CallMethod);
+        } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
+            // Create new function
+            Local< Function > callback_func = FunctionTemplate::New(CallStaticMethod)->GetFunction();
+            // Set name
+            callback_func->SetName(String::New(func_name));
+            // Create external to hold GIBaseInfo and set it
+            v8::Handle<v8::External> info_ptr = v8::External::New((void*)g_base_info_ref(func));
+            callback_func->SetHiddenValue(String::New("GIInfo"), info_ptr);
+            // Set v8 function
+            t->Set(String::NewSymbol(func_name), callback_func);
         }
-        
-        int l = g_object_info_get_n_methods(info);
-        for (int i=0; i<l; i++) {
-            GIFunctionInfo *func = g_object_info_get_method(info, i);
-            const char *func_name = g_base_info_get_name(func);
-            GIFunctionInfoFlags func_flag = g_function_info_get_flags(func);
-            // Determine if method is static one.
-            // If given function is neither method nor constructor, it's most likely static method.
-            // In such case, do not set prototype method.
-            if (func_flag & GI_FUNCTION_IS_METHOD) {
-                
-            } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
-                // Create new function
-                Local< Function > callback_func = FunctionTemplate::New(CallStaticMethod)->GetFunction();
-                // Set name
-                callback_func->SetName(String::New(func_name));
-                // Create external to hold GIBaseInfo and set it
-                v8::Handle<v8::External> info_ptr = v8::External::New((void*)g_base_info_ref(func));
-                callback_func->SetHiddenValue(String::New("GIInfo"), info_ptr);
-                // Set v8 function
-                t->Set(String::NewSymbol(func_name), callback_func);
-            }
-            g_base_info_unref(func);
-        }
-        gcounter += l;
-        first = false;
+        g_base_info_unref(func);
     }
 }
 
