@@ -11,8 +11,10 @@ using namespace v8;
 
 namespace gir {
 
-bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, bool out) {
-    GITypeInfo *type = g_arg_info_get_type(info);
+bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo *type_info, bool out) {
+    GITypeInfo *type = type_info;
+    if (info != NULL) 
+        type = g_arg_info_get_type(info);
     GITypeTag tag = ReplaceGType(g_type_info_get_tag(type));
 
     // nullify string so it be freed safely later 
@@ -332,7 +334,7 @@ bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GList **list_p) {
     int l = arr->Length();
     for(int i=0; i<l; i++) {
         GIArgument arg = {0,};
-        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0), FALSE)) {
+        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0), NULL, FALSE)) {
             return false;
         }
         list = g_list_prepend(list, arg.v_pointer);
@@ -350,7 +352,7 @@ bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GSList **slist_p) {
     int l = arr->Length();
     for(int i=0; i<l; i++) {
         GIArgument arg = {0,};
-        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0), FALSE)) {
+        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0), NULL, FALSE)) {
             return false;
         }
         slist = g_slist_prepend(slist, arg.v_pointer);

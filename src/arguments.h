@@ -10,7 +10,7 @@ namespace gir {
 
 class Args {
   public:
-    static bool ToGType(v8::Handle<v8::Value>, GIArgument *arg, GIArgInfo *info, bool out);
+    static bool ToGType(v8::Handle<v8::Value>, GIArgument *arg, GIArgInfo *info, GITypeInfo *type_info, bool out);
     static v8::Handle<v8::Value> FromGTypeArray(GIArgument *arg, GIArgInfo *info, int array_length);
     static v8::Handle<v8::Value> FromGType(GIArgument *arg, GIArgInfo *info, int array_length);
     static inline GITypeTag ReplaceGType(GITypeTag type);

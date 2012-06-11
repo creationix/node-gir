@@ -256,7 +256,7 @@ v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value >
         Handle<Value> res;
         GITypeInfo *type_info = g_field_info_get_type(field_info);
         // FIXME, add TypeInfo argument when ArgInfo is NULL
-        bool is_set = Args::ToGType(value, &arg, NULL, false);
+        bool is_set = Args::ToGType(value, &arg, NULL, type_info, false);
         if (g_field_info_set_field(field_info, that->structure, &arg) == false) {
             // TODO, set exception
         } 

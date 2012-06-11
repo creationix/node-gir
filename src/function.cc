@@ -128,14 +128,14 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         arg = g_callable_info_get_arg(info, i);
         dir = g_arg_info_get_direction(arg);
         if(dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
-            if(!Args::ToGType(args[real_arg_idx], &in_args[in_c], arg, FALSE)) {
+            if(!Args::ToGType(args[real_arg_idx], &in_args[in_c], arg, NULL, FALSE)) {
                 return BAD_ARGS("IN arguments conversion failed");
             }
             //printf("IN ARG (%d) '%s' \n", in_c, in_args[in_c].v_string);
             in_c++;
         }
         if(dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT) { 
-            if(!Args::ToGType(args[real_arg_idx], &out_args[out_c], arg, TRUE)) {
+            if(!Args::ToGType(args[real_arg_idx], &out_args[out_c], arg, NULL, TRUE)) {
                 return BAD_ARGS("OUT arguments conversion failed");
             }
             out_c++;
