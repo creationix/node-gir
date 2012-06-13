@@ -19,81 +19,27 @@ std::vector<StructFunctionTemplate> GIRStruct::templates;
 std::vector<StructData> GIRStruct::instances;
 static Persistent<String> emit_symbol;
 
-GIRStruct::GIRStruct(GIStructInfo *info_) 
+GIRStruct::GIRStruct(GIStructInfo *info) 
 {
-    info = info_;
-    GType t = g_registered_type_info_get_g_type(info);
-
-    printf("GIRStruct::GIRStruct \n");
-
     structure = g_try_malloc0(g_struct_info_get_size ((GIStructInfo*)info));
 }
 
-Handle<Value> GIRStruct::New(GObject *obj_, GIObjectInfo *info_) 
+Handle<Value> GIRStruct::New(GIStructInfo *info) 
 {
-    // find the function template
-    if (obj_ == NULL || !G_IS_OBJECT(obj_)) {
-        return Null();
-    }
+    HandleScope scope;
+    Handle<Value> res = Null();
     
-    // very interesting: gtk.Window with a child. child.get_parent_window() returns a GIObjetInfo with name GdkWindow (Namespace GDK!)
-    // debug_printf("type is %s\n", g_type_name(g_registered_type_info_get_g_type(info_)));
-    
-    Handle<Value> res = GetInstance(obj_);
-    if (res != Null()) {
-        return res;
-    }
-   /* 
     Handle<Value> arg = Boolean::New(false);
     std::vector<StructFunctionTemplate>::iterator it;
     
     for (it = templates.begin(); it != templates.end(); ++it) {
-        if (g_base_info_equal(info_, it->info)) {
-            res = it->function->GetFunction()->NewInstance(1, &arg);
-            if (!res.IsEmpty()) {
-                GIRStruct *e = ObjectWrap::Unwrap<GIRStruct>(res->ToObject());
-                e->info = info_;
-                e->obj = obj_;
-                e->abstract = false;
-                
-                return res;
-            }
+        if (g_base_info_equal(info, it->info)) {
+            res = it->function->GetFunction()->NewInstance();
             break;
         }
     }
-    */
-    return Null();
-}
-
-Handle<Value> GIRStruct::New(GObject *obj_, GType t) 
-{
-    if (obj_ == NULL || !G_IS_OBJECT(obj_)) {
-        return Null();
-    }
    
-    /*
-    Handle<Value> res = GetInstance(obj_);
-    if (res != Null()) {
-        return res;
-    }
-    
-    Handle<Value> arg = Boolean::New(false);
-    std::vector<StructFunctionTemplate>::iterator it;
-    
-    for (it = templates.begin(); it != templates.end(); ++it) {
-        if (t == it->type) {
-            res = it->function->GetFunction()->NewInstance(1, &arg);
-            if (!res.IsEmpty()) {
-                GIRStruct *e = ObjectWrap::Unwrap<GIRStruct>(res->ToObject());
-                e->info = it->info;
-                e->obj = obj_;
-                e->abstract = false;
-                return res;
-            }
-            return Null();
-        }   
-    }
-    */
+    return scope.Close(res);
 }
 
 Handle<Value> GIRStruct::New(const Arguments &args) 
@@ -101,6 +47,7 @@ Handle<Value> GIRStruct::New(const Arguments &args)
     HandleScope scope;
 
     if (args.Length() > 0) {
+        g_error("Structure constructor doesn't expect any parameter");
 	    return BAD_ARGS("Structure constructor doesn't expect any parameter");
     }
 

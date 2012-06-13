@@ -13,10 +13,6 @@ Midgard.init();
 
 var MidgardTest = require('./midgard_connection');
 
-console.log(MidgardTest.TestBook.metadata.created);
-console.log(MidgardTest.TestBook.metadata.created.year);
-process.exit;
-
 var suite = vows.describe('Midgard.Metadata');
 suite.addBatch({
     'CRUD' : {
@@ -67,7 +63,7 @@ suite.addBatch({
                 assert.isTrue(topic.hidden);
             },
             'test revised' : function (topic) {
-                //assert.equal("TODO", "DONE");
+                assert.equal("TODO", "DONE");
             }
         },
         'Delete' : {

@@ -19,6 +19,7 @@ void empty_func(void) {};
 std::vector<ObjectFunctionTemplate> GIRObject::templates;
 std::vector<InstanceData> GIRObject::instances;
 static Persistent<String> emit_symbol;
+GIPropertyInfo *g_object_info_find_property(GIObjectInfo *info, char *name);
 
 GIRObject::GIRObject(GIObjectInfo *info_, int n_params, GParameter *parameters) 
 {
@@ -211,12 +212,15 @@ v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::A
             
             debug_printf("GetHandler (Get property) '%s.%s' \n", G_OBJECT_TYPE_NAME(that->obj), *_name);
 
+            GIPropertyInfo *prop_info = g_object_info_find_property(base_info, *_name);
             GValue gvalue = {0,};
             g_value_init(&gvalue, pspec->value_type);
             g_object_get_property(G_OBJECT(that->obj), *_name, &gvalue);
             
-            Handle<Value> res = GIRValue::FromGValue(&gvalue);
+            Handle<Value> res = GIRValue::FromGValue(&gvalue, prop_info);
             g_value_unset(&gvalue);
+            if (prop_info)
+                g_base_info_unref(prop_info);
 
             return res;
         }
@@ -398,7 +402,7 @@ void GIRObject::SignalCallback(GClosure *closure,
     
     for (int i=0; i<n_param_values; i++) {
         GValue p = param_values[i];
-        args[i+1] = GIRValue::FromGValue(&p);
+        args[i+1] = GIRValue::FromGValue(&p, NULL);
     }
     
     Handle<Value> res = data->that->Emit(args, n_param_values+1);
@@ -504,7 +508,7 @@ Handle<Value> GIRObject::GetProperty(const Arguments &args)
     g_value_init(&gvalue, spec->value_type);
     g_object_get_property(G_OBJECT(that->obj), *propname, &gvalue);
     
-    Handle<Value> res = GIRValue::FromGValue(&gvalue);
+    Handle<Value> res = GIRValue::FromGValue(&gvalue, NULL);
     g_value_unset(&gvalue);
     
     return scope.Close(res);

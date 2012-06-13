@@ -1,84 +1,94 @@
 #include "values.h"
 #include "util.h"
+#include "namespace_loader.h"
 
 #include "types/object.h"
+#include "types/struct.h"
 #include <stdlib.h>
 
 using namespace v8;
 
 namespace gir {
 
-Handle<Value> GIRValue::FromGValue(GValue *v) {
+Handle<Value> GIRValue::FromGValue(GValue *v, GIBaseInfo *base_info) {
     GType type = G_VALUE_TYPE(v);
     Handle<Value> value = Undefined();
+    const char *tmpstr;
+    char *str;
+    GIBaseInfo *boxed_info;
    
-    printf("FROM GVALUE '%s' FUNDAMENTAL '%s' \n",
-            g_type_name(type), 
-            g_type_name(G_TYPE_FUNDAMENTAL(type)));
+    switch (G_TYPE_FUNDAMENTAL(type)) {
+        case G_TYPE_CHAR:
+            str = new char[2];
+            str[0] = g_value_get_char(v);
+            str[1] = '\0';
+            value = String::New(str);
+            delete[] str;
+            return value;
 
-    if(g_type_is_a(type, G_TYPE_CHAR)) {
-        char *str = new char[2];
-        str[0] = g_value_get_char(v);
-        str[1] = '\0';
-        value = String::New(str);
-        delete[] str;
-    }
-    else if(g_type_is_a(type, G_TYPE_UCHAR)) {
-        char *str = new char[2];
-        str[0] = g_value_get_uchar(v);
-        str[1] = '\0';
-        value = String::New(str);
-        delete[] str;
-    }
-    else if(g_type_is_a(type, G_TYPE_BOOLEAN)) {
-        value = Boolean::New(g_value_get_boolean(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_INT)) {
-        value = Number::New(g_value_get_int(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_UINT) || g_type_is_a(type, G_TYPE_GTYPE)) {
-        value = Number::New(g_value_get_uint(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_LONG)) {
-        value = Number::New(g_value_get_long(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_ULONG)) {
-        value = Number::New(g_value_get_ulong(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_INT64)) {
-        value = Number::New(g_value_get_int64(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_UINT64)) {
-        value = Number::New(g_value_get_uint64(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_ENUM)) {
-        value = Number::New(g_value_get_enum(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_FLAGS)) {
-        value = Number::New(g_value_get_flags(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_FLOAT)) {
-        value = Number::New(g_value_get_float(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_DOUBLE)) {
-        value = Number::New(g_value_get_double(v));
-    }
-    else if(g_type_is_a(type, G_TYPE_STRING)) {
-        const char *tmpstr = g_value_get_string(v);
-        value = String::New(tmpstr ? tmpstr : "");
-    }
-    else if(g_type_is_a(type, G_TYPE_POINTER)) {
+        case G_TYPE_UCHAR:
+            str = new char[2];
+            str[0] = g_value_get_uchar(v);
+            str[1] = '\0';
+            value = String::New(str);
+            delete[] str;
+            return value;
+
+        case G_TYPE_BOOLEAN:
+            return Boolean::New(g_value_get_boolean(v));
+
+        case G_TYPE_INT:
+            return Number::New(g_value_get_int(v));
+            
+        case G_TYPE_UINT:
+            return Number::New(g_value_get_uint(v));
+            
+        case G_TYPE_LONG:
+            return Number::New(g_value_get_long(v));
+
+        case G_TYPE_ULONG:
+            return Number::New(g_value_get_ulong(v));
+            
+        case G_TYPE_INT64:
+            return Number::New(g_value_get_int64(v));
     
-    }
-    else if(g_type_is_a(type, G_TYPE_BOXED)) {
+        case G_TYPE_UINT64:
+            return Number::New(g_value_get_uint64(v));
     
-    }
-    else if(g_type_is_a(type, G_TYPE_PARAM)) {
+        case G_TYPE_ENUM:
+            return Number::New(g_value_get_enum(v));
+            
+        case G_TYPE_FLAGS:
+            return Number::New(g_value_get_flags(v));
+        
+        case G_TYPE_FLOAT:
+            return Number::New(g_value_get_float(v));
+            
+        case G_TYPE_DOUBLE:
+            return Number::New(g_value_get_double(v));
+            
+        case G_TYPE_STRING:
+            tmpstr = g_value_get_string(v);
+            return String::New(tmpstr ? tmpstr : "");
+            
+        case G_TYPE_BOXED:
+            if (G_VALUE_TYPE(v) == G_TYPE_VALUE_ARRAY) {
+                return EXCEPTION("GIRValue - GValueArray conversion not supported");
+            } else {
+                // Handle C structure held by boxed type
+                if (base_info == NULL)
+                    return EXCEPTION("GIRValue - missed base_info for boxed type");
+                boxed_info = g_irepository_find_by_gtype(NamespaceLoader::repo, G_VALUE_TYPE(v)); 
+                return GIRStruct::New(boxed_info);
+            }
+   
+        case G_TYPE_OBJECT:
+            return GIRObject::New(G_OBJECT(g_value_get_object(v)), type);
     
+        default:
+            return EXCEPTION("GIRValue - conversion of '%s' type not supported");
     }
-    else if(g_type_is_a(type, G_TYPE_OBJECT)) {
-        value = GIRObject::New(G_OBJECT(g_value_get_object(v)), type);
-    }
+
     return value;
 }
 

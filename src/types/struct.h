@@ -30,7 +30,6 @@ struct StructData {
     GIRStruct *structure;
 };
 
-
 class GIRStruct : public node::ObjectWrap {
   public:
     GIRStruct() {};
@@ -43,8 +42,7 @@ class GIRStruct : public node::ObjectWrap {
     static std::vector<StructData> instances;
     static std::vector<StructFunctionTemplate> templates;
     
-    static v8::Handle<v8::Value> New(GObject *obj, GIObjectInfo *info);
-    static v8::Handle<v8::Value> New(GObject *obj, GType t);
+    static v8::Handle<v8::Value> New(GIStructInfo *info); 
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     
     static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
