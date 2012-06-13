@@ -38,7 +38,12 @@ Handle<Value> GIRStruct::New(GIStructInfo *info)
             break;
         }
     }
-   
+  
+    if (!res.IsEmpty()) {
+        GIRStruct *s = ObjectWrap::Unwrap<GIRStruct>(res->ToObject());
+        s->info = info;
+    }
+
     return scope.Close(res);
 }
 
