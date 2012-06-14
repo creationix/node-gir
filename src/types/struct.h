@@ -42,7 +42,7 @@ class GIRStruct : public node::ObjectWrap {
     static std::vector<StructData> instances;
     static std::vector<StructFunctionTemplate> templates;
     
-    static v8::Handle<v8::Value> New(GIStructInfo *info); 
+    static v8::Handle<v8::Value> New(GIRStruct *structure, GIStructInfo *info); 
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     
     static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
@@ -54,7 +54,7 @@ class GIRStruct : public node::ObjectWrap {
     static v8::Handle<v8::Value> CallStaticMethod(const v8::Arguments &args);
     
     static void PushInstance(GIRStruct *obj, v8::Handle<v8::Value>);
-    static v8::Handle<v8::Value> GetInstance(GObject *obj);
+    static v8::Handle<v8::Value> GetStructure(gpointer c_structure);
 
 
   private:  

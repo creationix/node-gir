@@ -218,7 +218,10 @@ v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::A
             g_object_get_property(G_OBJECT(that->obj), *_name, &gvalue);
             
             Handle<Value> res = GIRValue::FromGValue(&gvalue, prop_info);
-            g_value_unset(&gvalue);
+            GType value_type = G_TYPE_FUNDAMENTAL(pspec->value_type);
+            if (value_type != G_TYPE_OBJECT && value_type != G_TYPE_BOXED) {
+                g_value_unset(&gvalue);
+            }
             if (prop_info)
                 g_base_info_unref(prop_info);
 

@@ -24,11 +24,14 @@ GIRStruct::GIRStruct(GIStructInfo *info)
     structure = g_try_malloc0(g_struct_info_get_size ((GIStructInfo*)info));
 }
 
-Handle<Value> GIRStruct::New(GIStructInfo *info) 
+Handle<Value> GIRStruct::New(GIRStruct *structure, GIStructInfo *info) 
 {
     HandleScope scope;
-    Handle<Value> res = Null();
-    
+    Handle<Value> res = GetStructure(structure);
+    if (res != Null()) {
+        return res;
+    }
+
     Handle<Value> arg = Boolean::New(false);
     std::vector<StructFunctionTemplate>::iterator it;
     
@@ -42,6 +45,7 @@ Handle<Value> GIRStruct::New(GIStructInfo *info)
     if (!res.IsEmpty()) {
         GIRStruct *s = ObjectWrap::Unwrap<GIRStruct>(res->ToObject());
         s->info = info;
+        s->structure = structure;
     }
 
     return scope.Close(res);
@@ -68,7 +72,7 @@ Handle<Value> GIRStruct::New(const Arguments &args)
         }
     }
 
-    if (info == NULL) {
+    if (info == NULL || !GI_IS_STRUCT_INFO(info)) {
         return EXCEPTION("Missed introspection structure info");
     }
      
@@ -209,14 +213,16 @@ v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value >
         GITypeInfo *type_info = g_field_info_get_type(field_info);
         // FIXME, add TypeInfo argument when ArgInfo is NULL
         bool is_set = Args::ToGType(value, &arg, NULL, type_info, false);
+	    printf("SET FIELD\n");
         if (g_field_info_set_field(field_info, that->structure, &arg) == false) {
-            // TODO, set exception
+            return EXCEPTION("Failed to set structure's field");
         } 
        
         // TODO, free arg.v_string 
         g_base_info_unref(type_info);
         g_base_info_unref(field_info);
-        
+       
+	    printf("FIELD IS SET\n");
         return v8::Boolean::New(is_set);
     }
 
@@ -291,14 +297,14 @@ void GIRStruct::PushInstance(GIRStruct *obj, Handle<Value> value)
     instances.push_back(data);
 }
 
-Handle<Value> GIRStruct::GetInstance(GObject *obj) 
+Handle<Value> GIRStruct::GetStructure(gpointer c_structure) 
 {
-    /*std::vector<StructData>::iterator it;
+    std::vector<StructData>::iterator it;
     for (it = instances.begin(); it != instances.end(); it++) {
-        if (it->obj && it->obj->obj && it->obj->obj == obj) {
+        if (it->structure && it->structure->structure && it->structure->structure == c_structure) {
             return it->instance;
         }
-    }*/
+    }
     return Null();
 }
 

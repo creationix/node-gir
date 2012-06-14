@@ -79,7 +79,7 @@ Handle<Value> GIRValue::FromGValue(GValue *v, GIBaseInfo *base_info) {
                 if (base_info == NULL)
                     return EXCEPTION("GIRValue - missed base_info for boxed type");
                 boxed_info = g_irepository_find_by_gtype(NamespaceLoader::repo, G_VALUE_TYPE(v)); 
-                return GIRStruct::New(boxed_info);
+                return GIRStruct::New((GIRStruct*)g_value_get_boxed(v), boxed_info);
             }
    
         case G_TYPE_OBJECT:
