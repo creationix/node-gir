@@ -80,6 +80,7 @@ Handle<Value> GIRStruct::New(const Arguments &args)
 
     obj->Wrap(args.This());
     PushInstance(obj, args.This());
+    obj->info = info;
     
     return scope.Close(args.This());
 }
@@ -337,6 +338,9 @@ Handle<Value> GIRStruct::CallMethod(const Arguments &args)
     
     v8::String::AsciiValue fname(args.Callee()->GetName());
     GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(args.This()->ToObject());
+    if (!GI_IS_STRUCT_INFO(that->info)) {
+	return EXCEPTION("Missed structure info to call method");
+    }
     GIFunctionInfo *func = g_struct_info_find_method(that->info, *fname);
     debug_printf("Call Method: '%s' [%p] \n", *fname, func);
     if (func) {
