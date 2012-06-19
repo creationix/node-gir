@@ -78,7 +78,7 @@ Handle<Value> GIRValue::FromGValue(GValue *v, GIBaseInfo *base_info) {
                 // Handle C structure held by boxed type
                 if (base_info == NULL)
                     return EXCEPTION("GIRValue - missed base_info for boxed type");
-                boxed_info = g_irepository_find_by_gtype(NamespaceLoader::repo, G_VALUE_TYPE(v)); 
+                boxed_info = g_irepository_find_by_gtype(NamespaceLoader::repo, G_VALUE_TYPE(v));
                 return GIRStruct::New((GIRStruct*)g_value_get_boxed(v), boxed_info);
             }
    
@@ -200,6 +200,7 @@ bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
         break;
         
         case G_TYPE_BOXED:
+            g_value_set_boxed(v, node::ObjectWrap::Unwrap<GIRStruct>(value->ToObject())->c_structure);
         break;
     
         case G_TYPE_PARAM:
