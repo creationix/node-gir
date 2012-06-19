@@ -210,15 +210,14 @@ v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::A
                 return EXCEPTION("property is not readable");
             }
             
-            debug_printf("GetHandler (Get property) '%s.%s' \n", G_OBJECT_TYPE_NAME(that->obj), *_name);
+            debug_printf("GetHandler (Get property) [%p] '%s.%s' \n", that->obj, G_OBJECT_TYPE_NAME(that->obj), *_name);
 
             GIPropertyInfo *prop_info = g_object_info_find_property(base_info, *_name);
+            GType value_type = G_TYPE_FUNDAMENTAL(pspec->value_type);
             GValue gvalue = {0,};
             g_value_init(&gvalue, pspec->value_type);
             g_object_get_property(G_OBJECT(that->obj), *_name, &gvalue);
-            
-            Handle<Value> res = GIRValue::FromGValue(&gvalue, prop_info);
-            GType value_type = G_TYPE_FUNDAMENTAL(pspec->value_type);
+            Handle<Value> res = GIRValue::FromGValue(&gvalue, prop_info);          
             if (value_type != G_TYPE_OBJECT && value_type != G_TYPE_BOXED) {
                 g_value_unset(&gvalue);
             }
@@ -260,8 +259,10 @@ v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Valu
             GValue gvalue = {0,};
             value_is_set = GIRValue::ToGValue(value, pspec->value_type, &gvalue);
             g_object_set_property(G_OBJECT(that->obj), *_name, &gvalue);
-            g_value_unset(&gvalue);
-          
+            GType value_type = G_TYPE_FUNDAMENTAL(pspec->value_type);
+            if (value_type != G_TYPE_OBJECT && value_type != G_TYPE_BOXED) {
+                g_value_unset(&gvalue);
+            }          
             return Boolean::New(value_is_set);
         }
     }
