@@ -27,7 +27,7 @@ struct StructMarshalData {
 
 struct StructData {
     v8::Persistent<v8::Value> instance;
-    GIRStruct *structure;
+    GIRStruct *gir_structure;
 };
 
 class GIRStruct : public node::ObjectWrap {
@@ -35,14 +35,14 @@ class GIRStruct : public node::ObjectWrap {
     GIRStruct() {};
     GIRStruct(GIObjectInfo *info);
     
-    gpointer structure;
+    gpointer c_structure;
     bool abstract;
     GIBaseInfo *info;
     
     static std::vector<StructData> instances;
     static std::vector<StructFunctionTemplate> templates;
     
-    static v8::Handle<v8::Value> New(GIRStruct *structure, GIStructInfo *info); 
+    static v8::Handle<v8::Value> New(gpointer c_structure, GIStructInfo *info); 
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     
     static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);

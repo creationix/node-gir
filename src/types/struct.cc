@@ -20,14 +20,14 @@ std::vector<StructData> GIRStruct::instances;
 static Persistent<String> emit_symbol;
 
 GIRStruct::GIRStruct(GIStructInfo *info) 
-{
-    structure = g_try_malloc0(g_struct_info_get_size ((GIStructInfo*)info));
+{ 
+    c_structure = g_try_malloc0(g_struct_info_get_size ((GIStructInfo*)info));
 }
 
-Handle<Value> GIRStruct::New(GIRStruct *structure, GIStructInfo *info) 
+Handle<Value> GIRStruct::New(gpointer c_structure, GIStructInfo *info) 
 {
     HandleScope scope;
-    Handle<Value> res = GetStructure(structure);
+    Handle<Value> res = GetStructure(c_structure);
     if (res != Null()) {
         return res;
     }
@@ -43,9 +43,11 @@ Handle<Value> GIRStruct::New(GIRStruct *structure, GIStructInfo *info)
     }
   
     if (!res.IsEmpty()) {
-        GIRStruct *s = ObjectWrap::Unwrap<GIRStruct>(res->ToObject());
+        GIRStruct *s = ObjectWrap::Unwrap<GIRStruct>(res->ToObject()); 
         s->info = info;
-        s->structure = structure;
+        if (s->c_structure)
+            g_free(s->c_structure);
+        s->c_structure = c_structure;
     }
 
     return scope.Close(res);
@@ -81,7 +83,7 @@ Handle<Value> GIRStruct::New(const Arguments &args)
     obj->Wrap(args.This());
     PushInstance(obj, args.This());
     obj->info = info;
-    
+   
     return scope.Close(args.This());
 }
 
@@ -159,15 +161,13 @@ v8::Handle<v8::Value> FieldGetHandler(v8::Local<v8::String> name, const v8::Acce
         if (!(g_field_info_get_flags(field_info) & GI_FIELD_IS_READABLE)) {
             // field is not readable
             return EXCEPTION("member is not readable");
-        }
-        
-        debug_printf("GetHandler (Get structure member) '%s.%s' \n", g_base_info_get_name(base_info), *_name);
-        
+        }        
         GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(info.This()->ToObject());
         GIArgument arg = {0, };
         Handle<Value> res;
+        debug_printf("GetHandler [%p] (Get structure member) '%s.%s' \n", that->c_structure, g_base_info_get_name(base_info), *_name);
         GITypeInfo *type_info = g_field_info_get_type(field_info);
-        if (g_field_info_get_field(field_info, that->structure, &arg) == TRUE) {
+        if (g_field_info_get_field(field_info, that->c_structure, &arg) == TRUE) {
             res = Args::FromGType(&arg, type_info, -1);
         } else {
             res = Undefined();
@@ -206,24 +206,25 @@ v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value >
             return EXCEPTION("member is not writable");
         }
         
-        debug_printf("SetHandler (Set structure member) '%s.%s' \n", g_base_info_get_name(base_info), *_name);
-
         GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(info.This()->ToObject());
+        debug_printf("SetHandler [%p] (Set structure member) '%s.%s' \n", that->c_structure, g_base_info_get_name(base_info), *_name);
         GIArgument arg = {0, };
         Handle<Value> res;
         GITypeInfo *type_info = g_field_info_get_type(field_info);
         // FIXME, add TypeInfo argument when ArgInfo is NULL
         bool is_set = Args::ToGType(value, &arg, NULL, type_info, false);
-	    printf("SET FIELD\n");
-        if (g_field_info_set_field(field_info, that->structure, &arg) == false) {
+        if (g_field_info_set_field(field_info, that->c_structure, &arg) == false) {
             return EXCEPTION("Failed to set structure's field");
         } 
-       
+ 
+        GIArgument ar = {0, };
+        if (g_field_info_get_field(field_info, that->c_structure, &ar) == TRUE) {
+            Handle<Value> ret = Args::FromGType(&arg, type_info, -1);
+        } 
         // TODO, free arg.v_string 
         g_base_info_unref(type_info);
         g_base_info_unref(field_info);
-       
-	    printf("FIELD IS SET\n");
+
         return v8::Boolean::New(is_set);
     }
 
@@ -247,8 +248,6 @@ void GIRStruct::Prepare(Handle<Object> target, GIStructInfo *info)
     if (g_str_has_suffix(name, "Private")
             || g_str_has_suffix(name, "IFace"))
         return;
-
-    printf("PREPARE STRUCT '%s'.'%s' ('%s') \n", namespace_, name, g_base_info_get_attribute(info, "disguised"));
 
     Local<FunctionTemplate> temp = FunctionTemplate::New(New);
     Persistent<FunctionTemplate> t = Persistent<FunctionTemplate>::New(temp);
@@ -293,7 +292,7 @@ void GIRStruct::PushInstance(GIRStruct *obj, Handle<Value> value)
     obj->MakeWeak();
     
     StructData data;
-    data.structure = obj;
+    data.gir_structure = obj;
     data.instance = p_value;
     instances.push_back(data);
 }
@@ -302,7 +301,7 @@ Handle<Value> GIRStruct::GetStructure(gpointer c_structure)
 {
     std::vector<StructData>::iterator it;
     for (it = instances.begin(); it != instances.end(); it++) {
-        if (it->structure && it->structure->structure && it->structure->structure == c_structure) {
+        if (it->gir_structure && it->gir_structure->c_structure && it->gir_structure->c_structure == c_structure) {
             return it->instance;
         }
     }
@@ -345,7 +344,7 @@ Handle<Value> GIRStruct::CallMethod(const Arguments &args)
     debug_printf("Call Method: '%s' [%p] \n", *fname, func);
     if (func) {
         debug_printf("\t Call symbol: '%s' \n", g_function_info_get_symbol(func));
-        return scope.Close(Func::Call((GObject *)that->structure, func, args, TRUE));
+        return scope.Close(Func::Call((GObject *)that->c_structure, func, args, TRUE));
     }
     else {
         return EXCEPTION("no such method");
