@@ -201,13 +201,15 @@ bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
         
         case G_TYPE_BOXED:
             g_value_set_boxed(v, node::ObjectWrap::Unwrap<GIRStruct>(value->ToObject())->c_structure);
+            return true;
         break;
     
         case G_TYPE_PARAM:
         break;
 
         default:
-        // Transform to correct type
+            EXCEPTION("Failed to convert value"); 
+            return false;
         break;
     }
     return false;
