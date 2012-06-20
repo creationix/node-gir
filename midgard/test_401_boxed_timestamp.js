@@ -5,7 +5,7 @@ var vows   = require('vows'),
 var gir = require('../gir');
 gir.init();
 
-var GObject = require('./gobject');
+var GObject = gir.load('GObject');
 
 var Midgard, gir, config, mgd;
 Midgard = gir.load('Midgard');
@@ -20,24 +20,33 @@ var suite = vows.describe('Midgard.Timestamp (Boxed)');
 suite.addBatch({
     'Get Default' : {
         'Year' : {
-            topic : MidgardTest.TestBook.metadata.created,
-            'is 0' : function (topic) {
-                assert.isNumber(topic.year);
-                assert.equal(topic.year, 0);
-            }	
+            'Created' : {
+                topic : MidgardTest.TestBook.metadata.created,
+                'is 1' : function (topic) {
+                    assert.isNumber(topic.year);
+                    assert.equal(topic.year, 1);
+                }
+            },
+             'Revised' : {
+                topic : MidgardTest.TestBook.metadata.revised,
+                'is 1' : function (topic) {
+                    assert.isNumber(topic.year);
+                    assert.equal(topic.year, 1);
+                }
+            }
         },
         'Month' : {
             topic : MidgardTest.TestBook.metadata.created,
-            'is 0' : function (topic) {
+            'is 1' : function (topic) {
                 assert.isNumber(topic.month);
-                assert.equal(topic.month, 0);
+                assert.equal(topic.month, 1);
             }	
         },
         'Day' : {
             topic : MidgardTest.TestBook.metadata.created,
-            'is 0' : function (topic) { 
+            'is 1' : function (topic) { 
                 assert.isNumber(topic.day);
-                assert.equal(topic.day, 0);
+                assert.equal(topic.day, 1);
             }	
         },
         'Hour' : {
@@ -65,7 +74,33 @@ suite.addBatch({
             topic : MidgardTest.TestBook.metadata.created,
             'is 0' : function (topic) {
                 assert.isString(topic.get_string());
-                assert.equal(topic.get_string(), "0000-00-00 00:00:00+0000");
+                assert.equal(topic.get_string(), "0001-01-01 00:00:00+0000");
+            }	
+        }
+    },
+    'Set Year' : {
+        'Created' : {
+            topic : MidgardTest.TestBook.metadata.created,
+            'is 2012' : function (topic) {
+                topic.year = 2012;
+                assert.isNumber(topic.year);
+                assert.equal(topic.year, 2012);
+            }	
+        },
+        'Revised' : {
+            topic : MidgardTest.TestBook.metadata.revised,
+            'is 2013' : function (topic) {
+                topic.year = 2013;
+                assert.isNumber(topic.year);
+                assert.equal(topic.year, 2013);
+            }	
+        },
+        'Published' : {
+            topic : MidgardTest.TestBook.metadata.published,
+            'is 2014' : function (topic) {
+                topic.year = 2014;
+                assert.isNumber(topic.year);
+                assert.equal(topic.year, 2014);
             }	
         }
     },

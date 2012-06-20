@@ -5,7 +5,7 @@ var vows   = require('vows'),
 var gir = require('../gir');
 gir.init();
 
-var GObject = require('./gobject');
+var GObject = gir.load('GObject');
 
 var Midgard, gir, config, mgd;
 Midgard = gir.load('Midgard');
