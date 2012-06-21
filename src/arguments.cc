@@ -195,6 +195,7 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
 
     int i = 0;
     v8::Local<v8::Array> arr;
+    GIBaseInfo *interface_info = NULL;
 
     switch(param_tag) {
         case GI_TYPE_TAG_UINT8:
@@ -211,6 +212,18 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
             for (i = 0; i < array_length; i++) { 
                 arr->Set(i, v8::Integer::New((int)((gpointer*)arg->v_pointer)[i]));
             }
+            return arr;
+
+        case GI_TYPE_TAG_INTERFACE:
+            if (arg->v_pointer == NULL)
+                return v8::Array::New(0);
+            arr = v8::Array::New(array_length);
+            interface_info = g_type_info_get_interface(type);
+            for (i = 0; i < array_length; i++) {
+                arr->Set(i, GIRObject::New((GObject*)((gpointer*)arg->v_pointer)[i], interface_info));
+                GObject *o = (GObject*)((gpointer*)arg->v_pointer)[i];
+            }
+            //g_base_info_unref(interface_info); // FIXME
             return arr;
 
         default:
