@@ -50,4 +50,30 @@ describe('Midgard.SqlQuerySelectData', function() {
         columns[2].get_name().should.equal('c');
         columns[2].get_qualifier().should.equal('t3');
     });
+
+    it('execute', function() {
+        var sel = new Midgard.SqlQuerySelectData({'connection':MidgardTest.cnc});
+        var storage = new Midgard.QueryStorage({'dbclass':'midgard_person'});
+        var column = new Midgard.SqlQueryColumn({
+            'queryproperty': new Midgard.QueryProperty({'property':'firstname', 'storage':storage}),
+            'name':'name',
+            'qualifier':'p'
+        });
+        sel.add_column(column);
+        sel.execute();
+    });
+
+    it('get query result', function() {
+        var sel = new Midgard.SqlQuerySelectData({'connection':MidgardTest.cnc});
+        var storage = new Midgard.QueryStorage({'dbclass':'gir_test_book_crud'});
+        var column = new Midgard.SqlQueryColumn({
+            'queryproperty': new Midgard.QueryProperty({'property':'title', 'storage':storage}),
+            'name':'name',
+            'qualifier':'p'
+        });
+        sel.add_column(column);
+        sel.execute();
+        var result = sel.get_query_result();
+        result.should.be.a('object');
+    });
 });
