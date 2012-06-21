@@ -845,6 +845,13 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
         int ifaces = g_object_info_get_n_interfaces(info);
         for (int i = 0; i < ifaces; i++) {
             GIInterfaceInfo *iface_info = g_object_info_get_interface(info, i);
+            // Register prerequisities
+            int n_pre = g_interface_info_get_n_prerequisites(iface_info);
+            for (int j = 0; j < n_pre; j++) {
+                GIBaseInfo *pre_info = g_interface_info_get_prerequisite(info, j);
+                GIRObject::RegisterMethods(target, pre_info, namespace_, t);
+                g_base_info_unref(pre_info);
+            }
             GIRObject::RegisterMethods(target, iface_info, namespace_, t);
             g_base_info_unref(iface_info);
         }
