@@ -839,6 +839,17 @@ Handle<Object> GIRObject::MethodList(GIObjectInfo *info)
 
 void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const char *namespace_, Handle<FunctionTemplate> t) 
 {
+    bool is_object_info = GI_IS_OBJECT_INFO(info);
+    // Register interface methods
+    if (is_object_info) {
+        int ifaces = g_object_info_get_n_interfaces(info);
+        for (int i = 0; i < ifaces; i++) {
+            GIInterfaceInfo *iface_info = g_object_info_get_interface(info, i);
+            GIRObject::RegisterMethods(target, iface_info, namespace_, t);
+            g_base_info_unref(iface_info);
+        }
+    }
+
     bool first = true;
     int gcounter = 0;
     g_base_info_ref(info);
@@ -846,22 +857,36 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
     
     while (true) {
         if (!first) {
-            GIObjectInfo *parent = g_object_info_get_parent(info);
+            GIObjectInfo *parent = NULL;
+            if (GI_IS_OBJECT_INFO(info)) 
+                parent = g_object_info_get_parent(info);
             if (!parent) {
                 g_base_info_unref(info);
                 return;
-            }
-            if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
+            } 
+            if (g_base_info_equal(parent, info)) {
+            //if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
                 g_base_info_unref(info);
                 return;
             }
             g_base_info_unref(info);
             info = parent;
         }
-        
-        int l = g_object_info_get_n_methods(info);
+       
+        int l = 0;
+        if (is_object_info) {
+            l = g_object_info_get_n_methods(info);
+        } else {
+            l = g_interface_info_get_n_methods(info);
+        }
+
         for (int i=0; i<l; i++) {
-            GIFunctionInfo *func = g_object_info_get_method(info, i);
+            GIFunctionInfo *func = NULL;
+            if (is_object_info) {
+                func = g_object_info_get_method(info, i);
+            } else {
+                func = g_interface_info_get_method(info, i);
+            }
             const char *func_name = g_base_info_get_name(func);
             GIFunctionInfoFlags func_flag = g_function_info_get_flags(func);
             // Determine if method is static one.
