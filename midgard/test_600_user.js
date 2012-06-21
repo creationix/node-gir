@@ -1,6 +1,6 @@
 
 var mocha = require('mocha'),
-    assert = require('assert');
+    should = require('should');
 
 var gir = require('../gir');
 gir.init();
@@ -16,30 +16,34 @@ describe('Midgard.User', function() {
     describe('Instance', function() {
         it('is instance', function() {
             var user = new Midgard.User({'connection':MidgardTest.cnc, 'login':'John', 'authtype':'Plaintext', 'active':true});
-            assert.isObject(user);
+            user.should.be.a('object');
         });
     });
 
-    describe('Create', function() {
+    describe('John', function() {
     
         it('is created', function () {
             var user = new Midgard.User({'connection':MidgardTest.cnc, 'login':'John', 'authtype':'Plaintext', 'active':true});
-            assert.isTrue(user.create());
+            var created = user.create();
+            created.should.equal(true);
         });
  
         it('is not created, duplicated', function () {
             var user = new Midgard.User({'connection':MidgardTest.cnc, 'login':'John', 'authtype':'Plaintext', 'active':true});
-            assert.isFalse(user.create());
+            var created = user.create();
+            created.should.equal(true);
         });       
     });
 
-    describe('Update', function() {
+    describe('Alice', function() {
     
         it('is updated', function () {
             var user = new Midgard.User({'connection':MidgardTest.cnc, 'login':'Alice', 'authtype':'Plaintext', 'active':true});
-            assert.isTrue(user.create());
+            var created = user.create();
+            created.should.equal(true)
             user.active = false;
-            assert.isTrue(user.update());
+            var updated = user.update();
+            updated.should.equal(true);
         }); 
     });
 });
