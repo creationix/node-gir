@@ -42,6 +42,12 @@ describe('Midgard.SqlQuerySelectData', function() {
         select.add_column(column);
 
         var columns = select.get_columns();
+        columns.length.should.equal(3);
+        columns[0].get_name().should.equal('a');
+        columns[0].get_qualifier().should.equal('t1');
+        columns[1].get_name().should.equal('b');
+        columns[1].get_qualifier().should.equal('t2');
+        columns[2].get_name().should.equal('c');
+        columns[2].get_qualifier().should.equal('t3');
     });
-
 });
