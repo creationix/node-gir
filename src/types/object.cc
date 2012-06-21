@@ -865,7 +865,6 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
                 return;
             } 
             if (g_base_info_equal(parent, info)) {
-            //if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(info) ) == 0) {
                 g_base_info_unref(info);
                 return;
             }
