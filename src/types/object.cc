@@ -431,8 +431,9 @@ void GIRObject::SignalFinalize(gpointer marshal_data, GClosure *c)
 Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args) 
 {
     HandleScope scope;
-        
+     
     v8::String::AsciiValue fname(args.Callee()->GetName());
+    debug_printf("Call method '%s' \n", *fname);
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
     GIFunctionInfo *func = that->FindMethod(that->info, *fname);
     debug_printf("Call Method: '%s' [%p] \n", *fname, func);
@@ -441,11 +442,7 @@ Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args)
         debug_printf("\t Call symbol: '%s' \n", g_function_info_get_symbol(func));
         return scope.Close(Func::Call(that->obj, func, args, TRUE));
     }
-    else {
-        return EXCEPTION("no such method");
-    }
-    
-    return scope.Close(Undefined());
+    return EXCEPTION("no such method");
 }
 
 Handle<Value> GIRObject::CallStaticMethod(const Arguments &args) 
@@ -654,14 +651,27 @@ Handle<Value> GIRObject::CallVFunc(const Arguments &args)
     return scope.Close(Undefined());
 }
 
-GIFunctionInfo *GIRObject::FindMethod(GIObjectInfo *inf, char *name) 
+GIFunctionInfo *GIRObject::FindMethod(GIObjectInfo *info, char *name) 
 {
-    GIFunctionInfo *func = g_object_info_find_method(inf, name);
+    GIFunctionInfo *func = g_object_info_find_method(info, name);
+
+    // Find interface method
     if (!func) {
-        GIObjectInfo *parent = g_object_info_get_parent(inf);
-        if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
-            func = FindMethod(parent, name);
+        int ifaces = g_object_info_get_n_interfaces(info);
+        for (int i = 0; i < ifaces; i++) {
+            GIInterfaceInfo *iface_info = g_object_info_get_interface(info, i);
+            func = g_interface_info_find_method(iface_info, name);
+            if (func) {
+                g_base_info_unref(iface_info);
+                return func;
+            }
+            g_base_info_unref(iface_info);
         }
+    }
+
+    if (!func) {
+        GIObjectInfo *parent = g_object_info_get_parent(info);
+        func = FindMethod(parent, name);
         g_base_info_unref(parent);
     }
     return func;
@@ -848,7 +858,7 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
             // Register prerequisities
             int n_pre = g_interface_info_get_n_prerequisites(iface_info);
             for (int j = 0; j < n_pre; j++) {
-                GIBaseInfo *pre_info = g_interface_info_get_prerequisite(info, j);
+                GIBaseInfo *pre_info = g_interface_info_get_prerequisite(iface_info, j);
                 GIRObject::RegisterMethods(target, pre_info, namespace_, t);
                 g_base_info_unref(pre_info);
             }
