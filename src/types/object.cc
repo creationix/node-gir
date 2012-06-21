@@ -170,13 +170,14 @@ bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GI
         GValue gvalue = {0,};
         GType value_type = G_TYPE_INVALID;
         // Determine the best match for property's type
-        GObjectClass *klass = (GObjectClass*) g_type_class_peek(g_type_from_name(g_object_info_get_type_name(info)));
+        GObjectClass *klass = (GObjectClass*) g_type_class_ref(g_type_from_name(g_object_info_get_type_name(info)));
         if (klass) {
             GParamSpec *pspec = g_object_class_find_property(klass, *key);
             if (pspec)
                 value_type = pspec->value_type;
+            g_type_class_unref(klass);
         } 
-        if (!GIRValue::ToGValue(obj->Get(props->Get(i)), value_type, &gvalue)) { 
+        if (!GIRValue::ToGValue(obj->Get(props->Get(i)), value_type, &gvalue)) {
             DeleteParams(*params, (*length)-1);
             return false;
         }
