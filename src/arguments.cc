@@ -271,7 +271,8 @@ Handle<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type, int array_lengt
         }
         
         if(g_type_is_a(gtype, G_TYPE_OBJECT)) {
-            return GIRObject::New(G_OBJECT(arg->v_pointer), interface_info);
+            GObject *o = G_OBJECT(arg->v_pointer);
+            return GIRObject::New(o, G_OBJECT_TYPE(o));
         }
         if(g_type_is_a(gtype, G_TYPE_VALUE)) {
             GIRValue::FromGValue((GValue*)arg->v_pointer, NULL);

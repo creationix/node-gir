@@ -42,7 +42,7 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_)
     if (obj_ == NULL || !G_IS_OBJECT(obj_)) {
         return Null();
     }
-    
+   
     // very interesting: gtk.Window with a child. child.get_parent_window() returns a GIObjetInfo with name GdkWindow (Namespace GDK!)
     // debug_printf("type is %s\n", g_type_name(g_registered_type_info_get_g_type(info_)));
     
