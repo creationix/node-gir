@@ -220,8 +220,8 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
             arr = v8::Array::New(array_length);
             interface_info = g_type_info_get_interface(type);
             for (i = 0; i < array_length; i++) {
-                arr->Set(i, GIRObject::New((GObject*)((gpointer*)arg->v_pointer)[i], interface_info));
                 GObject *o = (GObject*)((gpointer*)arg->v_pointer)[i];
+                arr->Set(i, GIRObject::New(o, G_OBJECT_TYPE(o)));
             }
             //g_base_info_unref(interface_info); // FIXME
             return arr;
