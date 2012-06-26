@@ -1,7 +1,4 @@
 
-var vows   = require('vows'),
-    assert = require('assert');
-
 var gir = require('../gir');
 gir.init();
 
@@ -11,9 +8,6 @@ Midgard.init();
 
 config = new Midgard.Config();
 config.read_file_at_path('test_SQLITE.conf');
-//config.__set_property__("dbdir", "/tmp");
-//config.__set_property__("dbtype", "SQLite");
-//config.__set_property__("database", "node_gir");
 
 mgd = new Midgard.Connection();
 mgd.open_config(config);
