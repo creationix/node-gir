@@ -191,7 +191,7 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
     bool is_zero_terminated = g_type_info_is_zero_terminated(param_info);
     GITypeTag param_tag = g_type_info_get_tag(param_info);
 
-    g_base_info_unref(param_info);
+    //g_base_info_unref(param_info);
 
     int i = 0;
     v8::Local<v8::Array> arr;
@@ -218,10 +218,11 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
             if (arg->v_pointer == NULL)
                 return v8::Array::New(0);
             arr = v8::Array::New(array_length);
-            interface_info = g_type_info_get_interface(type);
-            for (i = 0; i < array_length; i++) {
+            interface_info = g_type_info_get_interface(param_info);
+
+            for (i = 0; i < array_length; i++) {                
                 GObject *o = (GObject*)((gpointer*)arg->v_pointer)[i];
-                arr->Set(i, GIRObject::New(o, G_OBJECT_TYPE(o)));
+                arr->Set(i, GIRObject::New(o, interface_info));
             }
             //g_base_info_unref(interface_info); // FIXME
             return arr;

@@ -5,6 +5,7 @@
 #include "../util.h"
 #include "../function.h"
 #include "../values.h"
+#include "../namespace_loader.h"
 
 #include <string.h>
 #include <node.h>
@@ -33,41 +34,57 @@ GIRObject::GIRObject(GIObjectInfo *info_, int n_params, GParameter *parameters)
     else {
         // gobject va_list, to allow construction parameters
         obj = G_OBJECT(g_object_newv(t, n_params, parameters)); 
+        debug_printf("New GObject [%p] '%s' \n", obj,G_OBJECT_TYPE_NAME(obj));
     }
+}
+
+GIObjectInfo *
+_get_object_info(GType obj_type, GIObjectInfo *info)
+{
+    // The main purpose of this function is to get the best matching info.
+    // For example, we have class C which extends B and this extends A.
+    // Function x() returns C instances, while it's introspected to return A instances.
+    // If C info is not found, we try B as it's the first ancestor of C, etc.
+    GIBaseInfo *tmp_info = g_irepository_find_by_gtype(NamespaceLoader::repo, obj_type);
+    if (tmp_info != NULL && g_base_info_equal(tmp_info, info))
+        return g_base_info_ref(tmp_info);
+    GType parent_type = g_type_parent(obj_type);
+    if (tmp_info == NULL)
+        return g_irepository_find_by_gtype(NamespaceLoader::repo, parent_type);
+    return tmp_info;
 }
 
 Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_) 
 {
     // find the function template
     if (obj_ == NULL || !G_IS_OBJECT(obj_)) {
+
         return Null();
     }
-   
-    // very interesting: gtk.Window with a child. child.get_parent_window() returns a GIObjetInfo with name GdkWindow (Namespace GDK!)
-    // debug_printf("type is %s\n", g_type_name(g_registered_type_info_get_g_type(info_)));
-    
+
     Handle<Value> res = GetInstance(obj_);
     if (res != Null()) {
         return res;
     }
-    
     Handle<Value> arg = Boolean::New(false);
     std::vector<ObjectFunctionTemplate>::iterator it;
     
+    GIObjectInfo *object_info = _get_object_info(G_OBJECT_TYPE(obj_), info_);
     for (it = templates.begin(); it != templates.end(); ++it) {
-        if (g_base_info_equal(info_, it->info)) {
+       if (g_base_info_equal(object_info, it->info)) {
             res = it->function->GetFunction()->NewInstance(1, &arg);
             if (!res.IsEmpty()) {
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
-                e->info = info_;
+                e->info = object_info;
                 e->obj = obj_;
                 e->abstract = false;
-                
+                g_base_info_unref(object_info);
                 return res;
             }
             break;
         }
     }
+    g_base_info_unref(object_info);
     return Null();
 }
 
@@ -84,7 +101,13 @@ Handle<Value> GIRObject::New(GObject *obj_, GType t)
     
     Handle<Value> arg = Boolean::New(false);
     std::vector<ObjectFunctionTemplate>::iterator it;
-    
+    GIBaseInfo *base_info = g_irepository_find_by_gtype(NamespaceLoader::repo, t);
+    if (base_info == NULL) {
+        base_info = g_irepository_find_by_gtype(NamespaceLoader::repo, g_type_parent(t));
+    }
+    /*printf("CREATE NEW OBJECT WITH TYPE '%s' BASE '%s' \n", 
+            G_OBJECT_TYPE_NAME(t),
+            g_base_info_get_name(base_info)); */
     for (it = templates.begin(); it != templates.end(); ++it) {
         if (t == it->type) {
             res = it->function->GetFunction()->NewInstance(1, &arg);
@@ -92,12 +115,13 @@ Handle<Value> GIRObject::New(GObject *obj_, GType t)
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
                 e->info = it->info;
                 e->obj = obj_;
-                e->abstract = false;
+                e->abstract = false; 
                 return res;
-            }
+            } 
             return Null();
         }   
     }
+    return Null();
 }
 
 Handle<Value> GIRObject::New(const Arguments &args) 
