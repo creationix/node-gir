@@ -22,23 +22,6 @@ var book_store_id = 'book_store_id';
 
 var book_store_qualifier = 'bookstore';
 
-var sdirA = Midgard.Object.factory(mgd, 'gir_test_book_store');
-
-console.log(sdirA.title);
-
-var st = new Midgard.QueryStorage({'dbclass':'gir_test_book_crud'});
-var qs = new Midgard.QuerySelect({'connection':mgd, 'storage':st});
-qs.execute();
-var objects = qs.list_objects();
-var i = 0;
-for (i in objects) {
-    console.log(i);
-    console.log(typeof(objects[i]));
-    console.log(objects[i].title);
-}
-
-process.exit();
-
 describe('Midgard.SqlQueryResult', function() {
 
     beforeEach(function(done){
@@ -91,7 +74,7 @@ describe('Midgard.SqlQueryResult', function() {
             objects[i].purge(false);
         }
 
-        st = Midgard.QueryStorage({'dbclass':'gir_test_book_store'});
+        st = new Midgard.QueryStorage({'dbclass':'gir_test_book_store'});
         qs = new Midgard.QuerySelect({'connection':mgd, 'storage':st});
         qs.execute();
         var objects = qs.list_objects();
