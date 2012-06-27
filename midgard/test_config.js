@@ -1,27 +1,27 @@
 
-var vows   = require('vows'),
-    assert = require('assert');
+var mocha = require('mocha'),
+    should = require('should');
 
-var gir = require('gir');
+var gir = require('../gir');
 gir.init();
 
-var Midgard, gir, config, mgd;
-Midgard = gir.load('Midgard');
+var GObject = gir.load('GObject');
+var Midgard = gir.load('Midgard');
 Midgard.init();
 
 config = new Midgard.Config();
-config.__set_property__("dbdir", "/tmp");
-config.__set_property__("dbtype", "SQLite");
-config.__set_property__("database", "node_gir");
+config.dbdir = '/tmp';
+config.dbtype = 'SQLite';
+config.database = 'node_gir';
 
 mgd = new Midgard.Connection();
 
-var suite = vows.describe('Midgard.Config');
-suite.addBatch({
-	'Open Config' : {
-		topic: mgd.__call__('open_config', config),
-		'should be true': function (topic) {
-			assert.isTrue(topic);
-		}
-	}
-}).run();
+describe('Midgard.Config', function() {
+    
+    it('Open config', function() {
+        var opened = mgd.open_config(config);
+        opened.should.be.a('boolean');
+        opened.should.equal(true);
+    });
+});
+
