@@ -160,7 +160,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
 
     // Free possible allocated strings
     for (n = 0; n < out_c; n++) {
-        printf ("OUT ARG[%d](%d) (%d) uint (%d) \n", n, out_argc_c_length, out_args[n].v_pointer, (guint) out_args_c[n]);
+        //printf ("OUT ARG[%d](%d) (%d) uint (%d) \n", n, out_argc_c_length, out_args[n].v_pointer, (guint) out_args_c[n]);
         //g_free(out_args[n].v_string);
     }
 
