@@ -177,7 +177,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
     // Set returned array length
     if (tag == GI_TYPE_TAG_ARRAY) {
         if (returned_array_pos > -1) {
-            returned_array_length = (int) out_args_c[returned_array_pos];
+            returned_array_length = (int) GPOINTER_TO_INT(out_args_c[returned_array_pos]);
         }
     }
 
