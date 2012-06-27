@@ -87,6 +87,34 @@ describe('Midgard.SqlQueryResult', function() {
         done();
     })
 
+    it('execute invalid query', function() {
+        select = new Midgard.SqlQuerySelectData({'connection':MidgardTest.cnc});
+        var storage = new Midgard.QueryStorage({'dbclass':'midgard_person'});
+        var column = new Midgard.SqlQueryColumn({
+            'queryproperty': new Midgard.QueryProperty({'property':'firstname', 'storage':storage}),
+            'name':'name',
+            'qualifier':'p'
+        });
+        select.add_column(column);
+        select.set_constraint(
+            new Midgard.SqlQueryConstraint(
+                {'column': new Midgard.SqlQueryColumn({
+                    'queryproperty': new Midgard.QueryProperty({'property':'title'}),
+                    'qualifier': book_qualifier
+                    }),
+                'operator':'=',
+                'holder': new Midgard.QueryValue.create_with_value(book_a_title)
+                })
+            );
+        try {
+            select.execute();
+        } catch (err) {
+            console.log(err);
+            err.should.be.an.instanceof(GObject.Error)
+            err.code.should.equal(Midgard.ValidationError.TYPE_INVALID);
+        }
+    });
+
     it('execute', function() {
         select = new Midgard.SqlQuerySelectData({'connection':MidgardTest.cnc});
         var storage = new Midgard.QueryStorage({'dbclass':'midgard_person'});
