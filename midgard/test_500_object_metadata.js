@@ -23,14 +23,20 @@ published.year = 2012;
 published.month = 7;
 published.day = 1; 
 var datestring = "2012-07-01 00:00:00+0000";
-TestBook.metadata.published = published;
-TestBook.create();
-
 
 describe('Midgard.Metadata', function() {
     
     describe('Create', function() {
     
+        it('is created', function () {
+            TestBook.metadata.published = published;
+            var created = TestBook.create();
+            MidgardTest.cnc.get_error_string().should.equal("MGD_ERR_OK");
+            MidgardTest.cnc.get_error().should.equal(Midgard.GenericError.ok);
+            created.should.equal(true);
+            TestBook.metadata.should.be.a('object');
+        });
+
         it('is metadata', function () {
             TestBook.metadata.should.be.a('object');
         });

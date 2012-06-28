@@ -16,7 +16,7 @@ Midgard.Storage.create_base_storage(mgd);
 
 var test_midgard_bookstore = Midgard.Object.factory(mgd, "gir_test_book_store");
 test_midgard_bookstore.name = "BookStore";
-test_midgard_bookstore.create();
+//test_midgard_bookstore.create();
 
 var test_midgard_book = Midgard.Object.factory(mgd, "gir_test_book_crud");
 test_midgard_book.title = "The Holly Grail";

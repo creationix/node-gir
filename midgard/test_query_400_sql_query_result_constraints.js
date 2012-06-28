@@ -69,8 +69,6 @@ describe('Midgard.SqlQueryResult', function() {
         var objects = qs.list_objects();
         var i = 0;
         for (i in objects) {
-            console.log(i);
-            console.log(typeof(objects[i]));
             objects[i].purge(false);
         }
 

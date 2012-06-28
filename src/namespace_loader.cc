@@ -116,7 +116,8 @@ void NamespaceLoader::ParseEnum(GIEnumInfo *info, Handle<Object> &exports) {
     int length = g_enum_info_get_n_values(info);
     for(int i=0; i<length; i++) {
         GIValueInfo *value = g_enum_info_get_value(info, i);
-        obj->Set(String::New(g_base_info_get_name(value)), Number::New(i));
+        obj->Set(String::New(g_base_info_get_name(value)), Number::New(g_value_info_get_value(value)));
+	g_base_info_unref(value);
     }
     exports->Set(String::New(g_base_info_get_name(info)), obj);
 }

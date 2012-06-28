@@ -11,14 +11,28 @@ Midgard.init();
 
 var MidgardTest = require('./midgard_connection');
 
+var book = MidgardTest.TestBook;
+var bookstore = MidgardTest.TestBookStore;
+
 describe('Midgard.Object CRUD', function() {
 
     describe('Create', function() {
        
         var book = MidgardTest.TestBook;
 
-        it('is created', function() {
+        it('is created bookstore', function() {
+            var created = bookstore.create();
+            MidgardTest.cnc.get_error_string().should.equal('MGD_ERR_OK');
+            MidgardTest.cnc.get_error().should.equal(Midgard.GenericError.ok);
+            created.should.be.a('boolean');
+            created.should.equal(true);
+        });
+
+        it('is created book', function() {
+            book.store = bookstore.id;
             var created = book.create();
+            MidgardTest.cnc.get_error_string().should.equal('MGD_ERR_OK');
+            MidgardTest.cnc.get_error().should.equal(Midgard.GenericError.ok);
             created.should.be.a('boolean');
             created.should.equal(true);
         });
@@ -110,11 +124,9 @@ describe('Midgard.Object CRUD', function() {
     });
 
     describe('Purge bookstore', function() {
-       
-        var book = MidgardTest.TestBookStore;
 
         it('is purged', function() {
-            var purged = book.purge(false);
+            var purged = bookstore.purge(false);
             purged.should.be.a('boolean');
             purged.should.equal(true);
         });

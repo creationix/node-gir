@@ -22,9 +22,9 @@ describe('Midgard.Storage', function() {
         var children = GObject.type_children(type);
         var i = 0;
         for (i in children) {
-            //console.log("Create " + GObject.type_name(children[i]) + " storage");
-             var created = Midgard.Storage.create(MidgardTest.cnc, GObject.type_name(children[i]));
-             created.should.equal(true);
+            console.log("Create " + GObject.type_name(children[i]) + " storage");
+            var created = Midgard.Storage.create(MidgardTest.cnc, GObject.type_name(children[i]));
+            created.should.equal(true);
         }
     });
    
