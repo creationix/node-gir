@@ -1,6 +1,6 @@
 
 var mocha = require('mocha'),
-    assert = require('assert');
+    should = require('should');
 
 var gir = require('../gir');
 gir.init();
@@ -11,7 +11,10 @@ Midgard.init();
 
 var MidgardTest = require('./midgard_connection');
 
-var mdata = MidgardTest.TestBook.metadata;
+var mgd = MidgardTest.cnc;
+var TestBook = Midgard.Object.factory(mgd, "gir_test_book_store");
+
+var mdata = TestBook.metadata;
 mdata.score = -1;
 mdata.authors = "Sir Lancelot and Knights";
 mdata.hidden = false;
@@ -20,8 +23,8 @@ published.year = 2012;
 published.month = 7;
 published.day = 1; 
 var datestring = "2012-07-01 00:00:00+0000";
-MidgardTest.TestBook.metadata.published = published;
-MidgardTest.TestBook.create();
+TestBook.metadata.published = published;
+TestBook.create();
 
 
 describe('Midgard.Metadata', function() {
@@ -29,99 +32,99 @@ describe('Midgard.Metadata', function() {
     describe('Create', function() {
     
         it('is metadata', function () {
-            assert.isObject(MidgardTest.TestBook.metadata);
+            TestBook.metadata.should.be.a('object');
         });
         
         it('test score', function () {
-            assert.equal(MidgardTest.TestBook.metadata.score, -1);
+            TestBook.metadata.score.should.be.a('number');
+            TestBook.metadata.score.should.equal(-1);
         });
         
         it('test authors', function () {
-            assert.equal(MidgardTest.TestBook.metadata.authors, "Sir Lancelot and Knights");
+            TestBook.metadata.authors.should.be.a('string');
+            TestBook.metadata.authors.should.equal('Sir Lancelot and Knights');
         });
         
         it('test hidden', function () {
-            assert.isFalse(MidgardTest.TestBook.metadata.hidden);
+            TestBook.metadata.hidden.should.be.a('boolean');
+            TestBook.metadata.hidden.should.equal(false);
         });
         
         it('test created', function () {
-            var year = MidgardTest.TestBook.metadata.created.year;
-            assert.isNotNull(year);
+            var year = TestBook.metadata.created.year;
             var d = new Date();
-            assert.equal(year, d.getFullYear());
+            year.should.be.a('number');
+            year.should.equal(d.getFullYear());
         });
         
         it('test creator', function () {
-            var creator = MidgardTest.TestBook.metadata.creator;
-            assert.isNotNull(creator);
-            assert.equal(creator, "");
+            var creator = TestBook.metadata.creator;
+            creator.should.be.a('string');
+            creator.should.equal('');
         });
         
         it('test revised', function () {
-            var year = MidgardTest.TestBook.metadata.revised.year;
-            assert.isNotNull(year);
+            var year = TestBook.metadata.revised.year;
             var d = new Date();
-            assert.equal(year, d.getFullYear());
+            year.should.be.a('number');
+            year.should.equal(d.getFullYear());
         });
         
         it('test revisor', function () {
-            var revisor = MidgardTest.TestBook.metadata.revisor;
-            assert.isNotNull(revisor);
-            assert.equal(revisor, "");
+            var revisor = TestBook.metadata.revisor;
+            revisor.should.be.a('string');
+            revisor.should.equal('');
         });
         
         it('test published', function () {
-            var year = MidgardTest.TestBook.metadata.published.year;
-            var month =  MidgardTest.TestBook.metadata.published.month;
-            var day =  MidgardTest.TestBook.metadata.published.day;
-            assert.isNotNull(year);
-            assert.isNotNull(month);
-            assert.isNotNull(day);
-            assert.equal(year, 2012);
-            assert.equal(month, 7);
-            assert.equal(day, 1);
-            assert.equal(MidgardTest.TestBook.metadata.published.get_string(), datestring);
+            var year = TestBook.metadata.published.year;
+            var month =  TestBook.metadata.published.month;
+            var day =  TestBook.metadata.published.day;
+            year.should.be.a('number');
+            year.should.equal(2012);
+            month.should.be.a('number');
+            month.should.equal(7);
+            day.should.be.a('number');
+            day.should.equal(1);
+            TestBook.metadata.published.get_string().should.equal(datestring);
         });
     });
 
     describe('Update', function() {
     
         it('is updated', function () {
-            var mdata = MidgardTest.TestBook.metadata;
+            var mdata = TestBook.metadata;
             mdata.score = 1;
             mdata.authors = "Sir Lancelot and Knights and King Arthur";
             mdata.hidden = true;              
-            MidgardTest.TestBook.update();
-            assert.equal(MidgardTest.cnc.get_error_string(), "MGD_ERR_OK");
-            assert.isObject(MidgardTest.TestBook.metadata);
-            assert.isObject(mdata);
+            TestBook.update();
+            MidgardTest.cnc.get_error_string().should.equal("MGD_ERR_OK");
+            TestBook.metadata.should.be.a('object');
         });
 
         it('test score', function () {
-            assert.equal(MidgardTest.TestBook.metadata.score, 1);
+            TestBook.metadata.score.should.equal(1);
         });
         
         it('test authors', function () {
-            assert.equal(MidgardTest.TestBook.metadata.authors, "Sir Lancelot and Knights and King Arthur");
+            TestBook.metadata.authors.should.equal('Sir Lancelot and Knights and King Arthur');
         });
         
         it('test hidden', function () {
-            assert.isTrue(MidgardTest.TestBook.metadata.hidden);
+            TestBook.metadata.hidden.should.equal(true);
         });
         
         it('test revised', function () {
-            var revised = MidgardTest.TestBook.metadata.revised;
-            assert.isNotNull(revised);
+            var revised = TestBook.metadata.revised;
             var d = new Date();
-            assert.equal(revised.year, d.getFullYear());
-            assert.equal(revised.month-1, d.getMonth()); // Data,getMonth() range is 0-11
-            assert.equal(revised.day, d.getDate());
+            revised.year.should.equal(d.getFullYear());
+            revised.month.should.equal(d.getMonth() + 1); // Data,getMonth() range is 0-11
+            revised.day.should.equal(d.getDate());
         });
         
         it('test creator', function () {
-            var creator = MidgardTest.TestBook.metadata.creator;
-            assert.isNotNull(creator);
-            assert.equal(creator, "");
+            var creator = TestBook.metadata.creator;
+            creator.should.equal('');
         });
 
     });
@@ -129,19 +132,18 @@ describe('Midgard.Metadata', function() {
     describe('Delete', function() {
     
         it('is deleted', function () {
-            var deleted = MidgardTest.TestBook.delete(false);
-            assert.equal(MidgardTest.cnc.get_error_string(), "MGD_ERR_OK");
-            assert.isTrue(deleted);
-            assert.isTrue(MidgardTest.TestBook.metadata.deleted);
+            var deleted = TestBook.delete(false);
+            MidgardTest.cnc.get_error_string().should.equal('MGD_ERR_OK');
+            deleted.should.equal(true);
         });
     });
     describe('Purge', function() {
     
         it('is purged', function () {
-            var purged = MidgardTest.TestBook.purge(false);
-            assert.equal(MidgardTest.cnc.get_error_string(), "MGD_ERR_OK");
-            assert.isTrue(purged);
-            assert.isTrue(MidgardTest.TestBook.metadata.deleted);
+            var purged = TestBook.purge(false);
+            MidgardTest.cnc.get_error_string().should.equal('MGD_ERR_OK');
+            purged.should.equal(true);
+            TestBook.metadata.deleted.should.equal(true);
         });
     });
 });
