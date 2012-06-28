@@ -32,7 +32,6 @@ Handle<Value> GIRStruct::New(gpointer c_structure, GIStructInfo *info)
         return res;
     }
 
-    Handle<Value> arg = Boolean::New(false);
     std::vector<StructFunctionTemplate>::iterator it;
     
     for (it = templates.begin(); it != templates.end(); ++it) {
@@ -87,55 +86,6 @@ Handle<Value> GIRStruct::New(const Arguments &args)
     return scope.Close(args.This());
 }
 
-bool GIRStruct::ToParams(Handle<Value> val, GParameter** params, int *length, GIObjectInfo *info) 
-{
-    /*
-    *length = 0;
-    *params = NULL;
-    if (!val->IsObject()) {
-        return true;
-    }
-    Handle<Object> obj = val->ToObject();
-    
-    Handle<Array> props = obj->GetPropertyNames();
-    *length = props->Length();
-    *params = new GParameter[*length];
-    for (int i=0; i<*length; i++) {
-        String::Utf8Value key(props->Get(i)->ToString());
-        
-        char *name = new char[*length+1];
-        strcpy(name, *key);
-        
-        if (!FindProperty(info, name)) {
-            delete[] name;
-            DeleteParams(*params, (*length)-1);
-            return false;
-        }
-        
-        GValue gvalue = {0,};
-        if (!GIRValue::ToGValue(obj->Get(props->Get(i)), G_TYPE_INVALID, &gvalue)) {
-            delete[] name;
-            DeleteParams(*params, (*length)-1);
-            return false;
-        }
-        
-        (*params)[i].name = name;
-        (*params)[i].value = gvalue;
-    }
-    
-    return true;
-    */
-}
-
-void GIRStruct::DeleteParams(GParameter* params, int l) 
-{
-    for (int i=0; i<l; i++) {
-        delete[] params[i].name;
-        g_value_unset(&params[i].value);
-    }
-    delete[] params;
-}
-
 GIFieldInfo *_find_structure_member(GIStructInfo *info, const gchar *name)
 {
     gint n_fields = g_struct_info_get_n_fields(info);
@@ -188,6 +138,7 @@ v8::Handle<v8::Integer> FieldQueryHandler(v8::Local<v8::String> name, const v8::
 {
     String::AsciiValue _name(name);
     debug_printf("QUERY HANDLER '%s' \n", *_name);
+    return v8::Integer::New(0);
 }
 
 v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value > value, const v8::AccessorInfo &info) 
@@ -217,10 +168,10 @@ v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value >
             return EXCEPTION("Failed to set structure's field");
         } 
  
-        GIArgument ar = {0, };
+        /*GIArgument ar = {0, };
         if (g_field_info_get_field(field_info, that->c_structure, &ar) == TRUE) {
             Handle<Value> ret = Args::FromGType(&arg, type_info, -1);
-        } 
+        } */
         // TODO, free arg.v_string 
         g_base_info_unref(type_info);
         g_base_info_unref(field_info);

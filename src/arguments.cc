@@ -23,8 +23,9 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
     if (out == TRUE)
         return true;
 
-    if( ( v == Null() || v == Undefined() ) && g_arg_info_may_be_null(info) ||
-        tag == GI_TYPE_TAG_VOID) {
+    if( ( v == Null() || v == Undefined() ) 
+		    && (g_arg_info_may_be_null(info) 
+			    || tag == GI_TYPE_TAG_VOID)) {
         arg->v_pointer = NULL;
         return true;
     }
@@ -79,13 +80,13 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
     }
     if(tag == GI_TYPE_TAG_GLIST) {
         if(!v->IsArray()) { return false; }
-        GList *list = NULL;
+        //GList *list = NULL;
         //ArrayToGList(v, info, &list); // FIXME!!!
         return false;
     }
     if(tag == GI_TYPE_TAG_GSLIST) {
         if(!v->IsArray()) { return false; }
-        GSList *list = NULL;
+        //GSList *list = NULL;
         //ArrayToGList(v, info, &list); // FIXME!!!
         return false;
     }
@@ -124,7 +125,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
         if(!v->IsObject()) { return false; }
         
         GITypeInfo *key_param_info, *val_param_info;
-        GHashTable *ghash;
+        //GHashTable *ghash;
 
         key_param_info = g_type_info_get_param_type(info, 0);
         g_assert(key_param_info != NULL);
@@ -185,10 +186,9 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
 }
 
 Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_length) {
-    GITypeTag tag = g_type_info_get_tag(type);
 
     GITypeInfo *param_info = g_type_info_get_param_type(type, 0);
-    bool is_zero_terminated = g_type_info_is_zero_terminated(param_info);
+    //bool is_zero_terminated = g_type_info_is_zero_terminated(param_info);
     GITypeTag param_tag = g_type_info_get_tag(param_info);
 
     //g_base_info_unref(param_info);

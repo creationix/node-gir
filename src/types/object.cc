@@ -266,6 +266,7 @@ v8::Handle<v8::Integer> PropertyQueryHandler(v8::Local<v8::String> name, const v
 {
     String::AsciiValue _name(name);
     debug_printf("QUERY HANDLER '%s' \n", *_name);
+    return v8::Integer::New(0);
 }
 
 v8::Handle<v8::Value> PropertySetHandler(v8::Local<v8::String> name, Local< Value > value, const v8::AccessorInfo &info) 
@@ -434,7 +435,7 @@ void GIRObject::SignalCallback(GClosure *closure,
     Handle<Value> args[n_param_values+1];
     args[0] = String::New(data->event_name);
     
-    for (int i=0; i<n_param_values; i++) {
+    for (guint i=0; i<n_param_values; i++) {
         GValue p = param_values[i];
         args[i+1] = GIRValue::FromGValue(&p, NULL);
     }
@@ -711,6 +712,7 @@ GIPropertyInfo *g_object_info_find_property(GIObjectInfo *info, char *name)
         }
         g_base_info_unref(prop);
     }
+    return NULL;
 }
 
 GIPropertyInfo *GIRObject::FindProperty(GIObjectInfo *inf, char *name) 
@@ -739,6 +741,7 @@ GIInterfaceInfo *g_object_info_find_interface(GIObjectInfo *info, char *name)
         }
         g_base_info_unref(interface);
     }
+    return NULL;
 }
 
 GIInterfaceInfo *GIRObject::FindInterface(GIObjectInfo *inf, char *name) 
@@ -764,6 +767,7 @@ GIFieldInfo *g_object_info_find_field(GIObjectInfo *info, char *name)
         }
         g_base_info_unref(field);
     }
+    return NULL;
 }
 
 GIFieldInfo *GIRObject::FindField(GIObjectInfo *inf, char *name) 
@@ -894,7 +898,6 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
     bool first = true;
     int gcounter = 0;
     g_base_info_ref(info);
-    GIObjectInfo *src_info = info;
     
     while (true) {
         if (!first) {

@@ -61,10 +61,7 @@ class GIRStruct : public node::ObjectWrap {
     static v8::Handle<v8::Object> PropertyList(GIObjectInfo *info);
     static v8::Handle<v8::Object> MethodList(GIObjectInfo *info);
     static v8::Handle<v8::Object> InterfaceList(GIObjectInfo *info);
-    static v8::Handle<v8::Object> FieldList(GIObjectInfo *info);
-    
-    static bool ToParams(v8::Handle<v8::Value> val, GParameter** p, int *length, GIObjectInfo *info);
-    static void DeleteParams(GParameter* params, int length);
+    static v8::Handle<v8::Object> FieldList(GIObjectInfo *info);    
 };
 
 }

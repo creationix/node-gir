@@ -94,6 +94,21 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 break;
             case GI_INFO_TYPE_FUNCTION:
                 GIRFunction::Initialize(exports, (GIFunctionInfo*)info);
+                break;
+            case GI_INFO_TYPE_INVALID:
+            case GI_INFO_TYPE_CALLBACK:
+            case GI_INFO_TYPE_CONSTANT:
+            case GI_INFO_TYPE_INVALID_0:
+            case GI_INFO_TYPE_VALUE:
+            case GI_INFO_TYPE_SIGNAL:
+            case GI_INFO_TYPE_VFUNC:
+            case GI_INFO_TYPE_PROPERTY:
+            case GI_INFO_TYPE_FIELD:
+            case GI_INFO_TYPE_ARG:
+            case GI_INFO_TYPE_TYPE:
+            case GI_INFO_TYPE_UNRESOLVED:
+                // Do nothing
+                break;
         }
           
         g_base_info_unref(info);
