@@ -5,6 +5,7 @@
  **/
 
 //import gir library and EventEmitter
+//var gir = module.exports = require('./build/Release/lib.target/girepository.node')
 var gir = module.exports = require('./build/Release/girepository.node')
  ,  EventEmitter = require('events').EventEmitter;
 
