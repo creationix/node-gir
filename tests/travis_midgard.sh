@@ -13,7 +13,6 @@ tar -xzf ratatoskr
 sh -c "cd midgardproject-midgard-core-*&&./autogen.sh --prefix=/usr; make; sudo make install"
 rm -f ${MIDGARD_EXT_VERSION}
 
-npm install node-gyp
 npm install mocha
 npm install should
 npm install
