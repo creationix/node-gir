@@ -16,4 +16,4 @@ rm -f ${MIDGARD_EXT_VERSION}
 npm install node-gyp
 npm install mocha
 npm install should
-
+npm install
