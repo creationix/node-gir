@@ -1,5 +1,5 @@
 
-var gir = require('../gir');
+var gir = require('../../gir');
 gir.init();
 
 var Midgard, gir, config, mgd;

@@ -2,7 +2,7 @@
 var mocha = require('mocha'),
     should = require('should');
 
-var gir = require('../gir');
+var gir = require('../../gir');
 gir.init();
 
 var GObject = gir.load('GObject');
