@@ -14,7 +14,7 @@ class GIRFunction : public node::ObjectWrap {
   public:
     GIRFunction() {};
     
-    static void Initialize(v8::Handle<v8::Object> target, GIObjectInfo *info, char *namespace_);
+    static void Initialize(v8::Handle<v8::Object> target, GIObjectInfo *info);
     static v8::Handle<v8::Value> Execute(const v8::Arguments &args);
     static char* ToCamelCase(const char *str);
 

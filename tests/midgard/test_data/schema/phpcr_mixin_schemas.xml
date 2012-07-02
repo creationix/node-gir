@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+
+	<!-- mix:title -->
+	<type name="mix_title"  metadata="false" abstract="mixin">
+		<!-- JCR properties of mix:title type -->
+		<property name="jcr-title" type="string">
+			<RequiredType>STRING</RequiredType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<property name="jcr-description" type="string">
+	  	<RequiredType>STRING</RequiredType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<!-- Node and NodeType definitions -->
+		<user_values>
+			<description>This mixin node type can be used to add standardized title and description properties to a node.</description>
+			<Supertypes></Supertypes>
+			<isMixin>true</isMixin>
+			<PrimaryItemName></PrimaryItemName>
+			<RequiredPrimaryTypes></RequiredPrimaryTypes>
+			<DefaultPrimaryType></DefaultPrimaryType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<SameNameSiblings>false</SameNameSiblings> 
+		</user_values>
+	</type>
+
+	<!-- mix:created -->
+	<type name="mix_created" metadata="false" abstract="mixin">
+		<!-- JCR properties of mix:title type -->
+		<property name="jcr-created" type="datetime">
+			<RequiredType>DATE</RequiredType>
+			<isAutoCreated>true</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>true</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<property name="jcr-createdBy" type="string">
+	  	<RequiredType>STRING</RequiredType>
+			<isAutoCreated>true</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>true</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<!-- Node and NodeType definitions -->
+		<user_values>
+			<description>This mixin node type can be used to add standardized creation information
+				properties to a node. In implementations that make these properties protected,
+				their values are controlled by the repository, which should set them appropriately
+				upon the initial persist of a node with this mixin type. In cases where this mixin is
+				added to an already existing node the semantics of these properties are
+				implementation specific (see §10.10.3 Assigning Mixin Node Types).
+			</description>
+			<Supertypes></Supertypes>
+			<isMixin>true</isMixin>
+			<PrimaryItemName></PrimaryItemName>
+			<RequiredPrimaryTypes></RequiredPrimaryTypes>
+			<DefaultPrimaryType></DefaultPrimaryType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<SameNameSiblings>false</SameNameSiblings> 
+		</user_values>
+	</type>
+
+	<!-- mix:lastModified -->
+	<type name="mix_lastModified"  metadata="false" abstract="mixin">
+		<!-- JCR properties of mix:lastModified type -->
+		<property name="jcr-lastModified" type="datetime">
+			<RequiredType>DATE</RequiredType>
+			<isAutoCreated>true</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<property name="jcr-lastModifiedBy" type="string">
+	  	<RequiredType>STRING</RequiredType>
+			<isAutoCreated>true</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<!-- Node and NodeType definitions -->
+		<user_values>
+			<description>This mixin node type can be used to provide standardized modification
+				information properties to a node. In implementations that make these properties
+				protected, their values are controlled by the repository, which should set them
+				appropriately upon a significant modification of the subgraph of a node with this
+				mixin. What constitutes a significant modification will depend on the semantics of
+				the various parts of a node's subgraph and is implementation-dependent.
+			</description>
+			<Supertypes></Supertypes>
+			<isMixin>true</isMixin>
+			<PrimaryItemName></PrimaryItemName>
+			<RequiredPrimaryTypes></RequiredPrimaryTypes>
+			<DefaultPrimaryType></DefaultPrimaryType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<SameNameSiblings>false</SameNameSiblings>
+			<OriginalName>mix:lastModified</OriginalName>	
+		</user_values>
+	</type>
+
+	<!-- mix:language -->
+	<type name="mix_language"  metadata="false" abstract="mixin">
+		<!-- JCR properties of mix:language type -->
+		<property name="jcr-language" type="string">
+			<RequiredType>STRING</RequiredType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<!-- Node and NodeType definitions -->
+		<user_values>
+			<description>This mixin node type can be used to provide a standardized property that
+				specifies the natural language in which the content of a node is expressed. The
+				value of the jcr:language property should be a language code as defined in RFC
+			</description>
+			<Supertypes></Supertypes>
+			<isMixin>true</isMixin>
+			<PrimaryItemName></PrimaryItemName>
+			<RequiredPrimaryTypes></RequiredPrimaryTypes>
+			<DefaultPrimaryType></DefaultPrimaryType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<SameNameSiblings>false</SameNameSiblings> 
+		</user_values>
+	</type>
+
+	<!-- mix:mimeType -->
+	<type name="mix_mimeType"  metadata="false" abstract="mixin">
+		<!-- JCR properties of mix:mimeType type -->
+		<property name="jcr-mimeType" type="string">
+			<RequiredType>STRING</RequiredType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<property name="jcr-encoding" type="string">
+	  	<RequiredType>STRING</RequiredType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<!-- Node and NodeType definitions -->
+		<user_values>
+			<description>This mixin node type can be used to provide standardized mimetype and
+				encoding properties to a node.
+				If a node of this type has a primary item that is a single-value BINARY property
+				then jcr:mimeType property indicates the media type6 applicable to the contents
+				of that property and, if that media type is one to which a text encoding applies,
+				the jcr:encoding property indicates the character set7 used.
+				If a node of this type does not meet the above precondition then the
+				interpretation of the jcr:mimeType and jcr:encoding properties is
+				implementation-dependent.
+			</description>
+			<Supertypes></Supertypes>
+			<isMixin>true</isMixin>
+			<PrimaryItemName></PrimaryItemName>
+			<RequiredPrimaryTypes></RequiredPrimaryTypes>
+			<DefaultPrimaryType></DefaultPrimaryType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<SameNameSiblings>false</SameNameSiblings> 
+			<OriginalName>mix:mimeType</OriginalName>
+		</user_values>
+	</type>
+
+	<!-- mix:etag -->
+	<type name="mix_etag"  metadata="false" abstract="mixin">
+		<!-- JCR properties of mix:title type -->
+		<property name="jcr-etag" type="string">
+			<RequiredType>STRING</RequiredType>
+			<isAutoCreated>true</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>true</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<!-- Node and NodeType definitions -->
+		<user_values>
+			<description>A jcr:etag property is an opaque string whose syntax is identical to that defined
+				for entity tags in HTTP/1.1. Semantically, the jcr:etag is comparable to the
+				HTTP/1.1 strong entity tag.
+			</description>
+			<Supertypes></Supertypes>
+			<isMixin>true</isMixin>
+			<PrimaryItemName></PrimaryItemName>
+			<RequiredPrimaryTypes></RequiredPrimaryTypes>
+			<DefaultPrimaryType></DefaultPrimaryType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<SameNameSiblings>false</SameNameSiblings> 
+		</user_values>
+	</type>
+
+	<!-- mix:referenceable -->
+	<type name="mix_referenceable"  metadata="false" abstract="mixin">
+		<!-- JCR properties of mix:title type -->
+		<property name="jcr-uuid" type="string">
+			<RequiredType>STRING</RequiredType>
+			<isAutoCreated>true</isAutoCreated>
+			<isMandatory>true</isMandatory>
+			<isProtected>true</isProtected>
+			<isMultiple>false</isMultiple>
+		</property>
+		<!-- Node and NodeType definitions -->
+		<user_values>
+			<description>This node type adds an auto-created, mandatory, protected STRING property to
+				the node, called jcr:uuid, which exposes the identifier of the node. Note that the
+				term “UUID” is used for backward compatibility with JCR 1.0 and does not
+				necessarily imply the use of the UUID syntax, or global uniqueness.
+				The identifier of a referenceable node must be a referenceable identifier.
+				Referenceable identifiers must fulfill a number of constraints beyond the
+				minimum required of standard identifiers (see §3.8.3 Referenceable Identifiers).
+			</description>
+			<Supertypes></Supertypes>
+			<isMixin>true</isMixin>
+			<PrimaryItemName></PrimaryItemName>
+			<RequiredPrimaryTypes></RequiredPrimaryTypes>
+			<DefaultPrimaryType></DefaultPrimaryType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<SameNameSiblings>false</SameNameSiblings> 
+		</user_values>
+	</type>
+
+	<!-- mix:shareable -->
+	<type name="mix_shareable"  metadata="false" abstract="mixin" extends="mix_referenceable">
+		<!-- JCR properties of mix:shareable type -->
+		<!-- Node and NodeType definitions -->
+		<user_values>
+			<description>All shareable nodes are referenceable.</description>
+			<Supertypes>mix:referenceable</Supertypes>
+			<isMixin>true</isMixin>
+			<PrimaryItemName></PrimaryItemName>
+			<RequiredPrimaryTypes></RequiredPrimaryTypes>
+			<DefaultPrimaryType></DefaultPrimaryType>
+			<isAutoCreated>false</isAutoCreated>
+			<isMandatory>false</isMandatory>
+			<isProtected>false</isProtected>
+			<SameNameSiblings>false</SameNameSiblings> 
+		</user_values>
+	</type>
+
+</Schema>

@@ -97,9 +97,13 @@ that use it.  I'll know more as we progress.
 
  - All classes get created
  - classes get inherited
+ - interface methods are inherited
  - A class has lists of all its properties, methods, signals, vfuncs and fields
+ - C structures are propagated as objects (fields are properties)
+ - Both methods and static method can be called
  - You can create a class
- - functions can be called (but it does not work so well)
+ - functions can be called (but it does not work so well with 'out' arguments which should be set as returned value)
+ - GError is propagated as generic exception
  - property values can be set/get
  - events can be watched
  - flags, enums etc are set
@@ -107,10 +111,7 @@ that use it.  I'll know more as we progress.
 ## Things which dont work (correct)
 
  - Conversion between a v8 value and a GValue/GArgument is veeeery buggy (but everything needs it so most things are buggy)
- - The API is inconsistent (classes just have \_\_call\_method\_\_, \_\_get\_prroperty\_\_ etc
-   but the namespace has all methods [ gst.main(), gst.mainQuit()]
  - No support for libev/libuv; glib is using its own stuff (gst.main())
  - There is no good way to delete an object (memory management sucks at all)
- - You can't pass construction parameters to g_object_new
- - Only the GObject and Function type is implementet yet (left are GIInterfaceInfo and GIStructInfo)
  - types/function.cc need a rewrite
+ - GError should be propagated as derived classes depending on GError domain

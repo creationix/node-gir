@@ -3,6 +3,7 @@
 
 #include "types/object.h"
 #include "types/function.h"
+#include "types/struct.h"
 
 #include <string.h>
 
@@ -14,8 +15,8 @@ GIRepository *NamespaceLoader::repo = NULL;
 std::map<char *, GITypelib*> NamespaceLoader::type_libs;
 
 void NamespaceLoader::Initialize(Handle<Object> target) {
-    GIR_SET_METHOD(target, "load", NamespaceLoader::Load);
-    GIR_SET_METHOD(target, "search_path", NamespaceLoader::SearchPath);
+    NODE_SET_METHOD(target, "load", NamespaceLoader::Load);
+    NODE_SET_METHOD(target, "search_path", NamespaceLoader::SearchPath);
 }
 
 Handle<Value> NamespaceLoader::Load(const Arguments &args) {
@@ -74,7 +75,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
             case GI_INFO_TYPE_BOXED:
                 //FIXME: GIStructInfo or GIUnionInfo
             case GI_INFO_TYPE_STRUCT:
-                ParseStruct((GIStructInfo*)info, exports);
+                GIRStruct::Prepare(exports, (GIStructInfo*)info);
                 break;
             case GI_INFO_TYPE_ENUM:
                 ParseEnum((GIEnumInfo*)info, exports);
@@ -83,7 +84,7 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 ParseFlags((GIEnumInfo*)info, exports);
                 break;
             case GI_INFO_TYPE_OBJECT:
-                GIRObject::Prepare(exports, (GIObjectInfo*)info, namespace_);
+                GIRObject::Prepare(exports, (GIObjectInfo*)info);
                 break;
             case GI_INFO_TYPE_INTERFACE:
                 ParseInterface((GIInterfaceInfo*)info, exports);
@@ -92,15 +93,30 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 ParseUnion((GIUnionInfo*)info, exports);
                 break;
             case GI_INFO_TYPE_FUNCTION:
-                GIRFunction::Initialize(exports, (GIFunctionInfo*)info, namespace_);
+                GIRFunction::Initialize(exports, (GIFunctionInfo*)info);
+                break;
+            case GI_INFO_TYPE_INVALID:
+            case GI_INFO_TYPE_CALLBACK:
+            case GI_INFO_TYPE_CONSTANT:
+            case GI_INFO_TYPE_INVALID_0:
+            case GI_INFO_TYPE_VALUE:
+            case GI_INFO_TYPE_SIGNAL:
+            case GI_INFO_TYPE_VFUNC:
+            case GI_INFO_TYPE_PROPERTY:
+            case GI_INFO_TYPE_FIELD:
+            case GI_INFO_TYPE_ARG:
+            case GI_INFO_TYPE_TYPE:
+            case GI_INFO_TYPE_UNRESOLVED:
+                // Do nothing
+                break;
         }
-        
-        
+          
         g_base_info_unref(info);
     }
     
     // when all classes have been created we can inherit them
     GIRObject::Initialize(exports, namespace_);
+    GIRStruct::Initialize(exports, namespace_);
     
     return exports;
 }
@@ -115,7 +131,8 @@ void NamespaceLoader::ParseEnum(GIEnumInfo *info, Handle<Object> &exports) {
     int length = g_enum_info_get_n_values(info);
     for(int i=0; i<length; i++) {
         GIValueInfo *value = g_enum_info_get_value(info, i);
-        obj->Set(String::New(g_base_info_get_name(value)), Number::New(i));
+        obj->Set(String::New(g_base_info_get_name(value)), Number::New(g_value_info_get_value(value)));
+	g_base_info_unref(value);
     }
     exports->Set(String::New(g_base_info_get_name(info)), obj);
 }

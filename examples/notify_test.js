@@ -3,14 +3,7 @@ var notify = require('./notify');
 
 console.log(notify.init('notify_test.js sample application'));
 
-var n = new notify.Notification();
-var created = n.__call__('new', 'a', 'a', 'a', 'a');
-
-for(var k in n) {
-    console.log(k);
-}
-
-console.log(notify.Notification.__methods__);
+var n = new notify.Notification({'summary':'a'});
 
 n.update('Notify Test', 'This is a test notification message via Node.JS.');
 n.show();
