@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+    <type name="midgard_person" table="person">
+        <user_values>
+            <typeof>http://xmlns.com/foaf/0.1/Person</typeof>
+            <namespaces>foaf:http://xmlns.com/foaf/0.1/</namespaces>
+        </user_values>
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="firstname" type="string" index="yes" unique="yes">
+            <description>First name of the person</description>
+            <property>foaf:firstName</property>
+        </property>
+        <property name="lastname" type="string" index="yes">
+            <description>Last name of the person</description>
+            <property>foaf:lastName</property>
+        </property>
+    </type>
+
+    <type name="midgard_attachment" table="blobs">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name"     type="string" index="yes">
+            <description>Filename of the attachment</description>
+        </property>
+        <property name="title"    type="string">
+            <description>Title of the attachment</description>
+        </property>
+        <property name="location" type="string" index="yes">
+            <description>Location of the attachment in the blob directory structure</description>
+        </property>
+        <property name="mimetype" type="string" index="yes">
+            <description>MIME type of the attachment</description>
+        </property>
+        <property name="parentguid" type="guid" field="parent_guid" parentfield="parent_guid">
+            <description>GUID of the object the attachment is attached to</description>
+        </property>
+    </type>
+
+    <type name="midgard_parameter" table="record_extension">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="domain"   type="string" index="yes">
+            <description>Namespace of the parameter</description>
+        </property>
+        <property name="name"     type="string" index="yes">
+            <description>Key of the parameter</description>
+        </property>
+        <property name="value"    type="text">
+            <description>Value of the parameter</description>
+        </property>
+        <property name="parentguid" type="guid" field="parent_guid" parentfield="parent_guid">
+            <description>GUID of the object the parameter extends</description>
+        </property>
+    </type>
+
+    <type name="midgard_snippetdir" table="snippetdir">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes" unique="yes">
+            <description>Path name of the snippetdir</description>
+        </property>
+        <property name="up" type="unsigned integer" link="midgard_snippetdir:id" upfield="up">
+            <description>Snippetdir the snippetdir is under</description>
+        </property>
+    </type>
+
+    <type name="midgard_snippet" table="snippet" parent="midgard_snippetdir">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="name" type="string" index="yes" unique="yes">
+            <description>Path name of the snippet</description>
+        </property>
+        <property name="snippetdir" type="unsigned integer" link="midgard_snippetdir:id" parentfield="snippetdir">
+            <description>Snippetdir the snippet is under</description>
+        </property>
+        <property name="code" type="text">
+            <description>Code of the snippet</description>
+        </property>
+        <property name="doc" type="text">
+            <description>Documentation of the snippet</description>
+        </property>
+    </type>
+
+    <type name="midgard_quota" table="quota">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="sgsizelimit" type="integer" field="limit_sg_size">
+            <description>Quota for the sitegroup (in bytes)</description>
+        </property>
+        <property name="sgsize"       type="integer"     field="sg_size">
+            <description>Disk usage of the sitegroup (in bytes)</description>
+        </property>
+        <property name="sgrecordslimit" type="integer" field="limit_sg_records">
+            <description>Limit of number of records for the sitegroup</description>
+        </property>
+        <property name="sgrecords"     type="integer"     field="sg_records">
+            <description>Number of records for the sitegroup</description>
+        </property>
+        <property name="typename"     type="string" index="yes">
+            <description>MgdSchema type the quota applies to</description>
+        </property>
+        <property name="typesizelimit" type="integer" field="limit_type_size">
+            <description>Quota of the type for the sitegroup (in bytes)</description>
+        </property>
+        <property name="typesize"     type="integer"     field="type_size">
+            <description>Disk usage of the type of the sitegroup (in bytes)</description>
+        </property>
+        <property name="typerecordslimit" type="integer" field="limit_type_records">
+            <description>Limit of number of records of the type for the sitegroup</description>
+        </property>
+        <property name="typerecords" type="integer" field="type_records">
+            <description>Number of records of the type for the sitegroup</description>
+        </property>
+    </type>
+
+    <type name="midgard_activity" table="midgard_activity">
+        <user_values>
+            <typeof>http://xmlns.notu.be/aair#Activity</typeof>
+            <namespaces>aair:http://xmlns.notu.be/aair#</namespaces>
+        </user_values>
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="actor" link="midgard_person:id" type="unsigned integer" parentfield="actor">
+            <description>The person who performed the activity</description>
+            <property>aair:Actor</property>
+        </property>
+        <property name="verb" type="string" index="yes">
+            <!-- Note: there must be multiple verbs when Midgard supports it -->
+            <description>The action performed, following Atom Activity Extension URL schema (for example: http://activitystrea.ms/schema/1.0/post)</description>
+            <property>aair:activityVerb</property>
+        </property>
+        <property name="target" type="guid">
+            <description>The object that the action was done to</description>
+            <property>aair:activityObject</property>
+        </property>
+        <property name="summary" type="string">
+            <description>A human-readable description of the activity</description>
+            <property>aair:summary</property>
+        </property>
+        <property name="application" type="string" index="yes">
+            <description>Application the activity was performed with. In case of MidCOM, a component</description>
+            <property>aair:Application</property>
+        </property>
+    </type>
+</Schema>

@@ -1,0 +1,9 @@
+language: python
+
+before_script:
+  - ./tests/travis_midgard.sh
+
+script: sh -c "cd tests/midgard&&node ../../node_modules/mocha/bin/mocha test_*.js" 
+
+#notifications:
+#    irc: "irc.freenode.org#midgard"

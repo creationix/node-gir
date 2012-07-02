@@ -7,7 +7,7 @@ var win = new gtk.Window();
 
 win.on('destroy', function() {
   console.log('Window destroyed');
-  gtk.mainQuit();
+  gtk.main_quit();
   process.exit();
 });
 

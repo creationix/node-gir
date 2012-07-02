@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schema xmlns="http://www.midgard-project.org/repligard/1.4">
+
+    <!-- nt:base -->
+    <type name="nt_base" metadata="false" abstract="interface">
+        <!-- JCR properties of nt:base Node -->
+        <property name="jcr-primaryType" type="string">
+            <description>The type of a node</description>
+            <getOnParentVersion>COMPUTE</getOnParentVersion>
+            <RequiredType>NAME</RequiredType>
+            <isAutoCreated>true</isAutoCreated>
+            <isMandatory>true</isMandatory>
+            <isProtected>true</isProtected>
+            <isMultiple>false</isMultiple>
+        </property>
+        <property name="jcr-mixinTypes">
+            <description>Mixin types multivalue</description>
+          <RequiredType>NAME</RequiredType>
+            <getOnParentVersion>COMPUTE</getOnParentVersion>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <isProtected>true</isProtected>
+            <isMultiple>true</isMultiple>
+        </property>
+
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Supertypes></Supertypes>
+            <isMixin>false</isMixin>
+            <PrimaryItemName></PrimaryItemName>
+            <RequiredPrimaryTypes></RequiredPrimaryTypes>
+            <DefaultPrimaryType></DefaultPrimaryType>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <OnParentVersion></OnParentVersion>
+            <isProtected>false</isProtected>
+            <SameNameSiblings>false</SameNameSiblings>
+             <isAbstract>true</isAbstract>    
+        </user_values>
+    </type>
+
+    <!-- nt:hierarchyNode -->
+    <type name="nt_hierarchyNode" metadata="false" extends="nt_base, mix_created">
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Supertypes>mix:created</Supertypes>
+            <isMixin>false</isMixin>
+            <PrimaryItemName></PrimaryItemName>
+            <RequiredPrimaryTypes></RequiredPrimaryTypes>
+            <DefaultPrimaryType></DefaultPrimaryType>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <OnParentVersion></OnParentVersion>
+            <isProtected>false</isProtected>
+            <SameNameSiblings>false</SameNameSiblings>
+            <isAbstract>true</isAbstract>    
+        </user_values>
+    </type>
+
+    <!-- nt:folder -->
+    <type name="nt_folder" table="phpcr_nt_folder" metadata="false" extends="nt_hierarchyNode">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Supertypes>nt:hierarchyNode</Supertypes>
+            <isMixin>false</isMixin>
+            <PrimaryItemName></PrimaryItemName>
+            <ChildNodeDefinition>*</ChildNodeDefinition>
+            <RequiredPrimaryTypes>nt:hierarchyNode</RequiredPrimaryTypes>
+            <DefaultPrimaryType></DefaultPrimaryType>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <OnParentVersion>VERSION</OnParentVersion>
+            <isProtected>false</isProtected>
+            <SameNameSiblings>false</SameNameSiblings> 
+        </user_values>
+    </type>
+
+    <!-- nt:file -->
+    <type name="nt_file" table="phpcr_nt_file" metadata="false" extends="nt_hierarchyNode">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Supertypes>nt:hierarchyNode</Supertypes>
+            <isMixin>false</isMixin>
+            <HasOrderableChildNodes>false</HasOrderableChildNodes>    
+            <PrimaryItemName>jcr:content</PrimaryItemName>
+            <ChildNodeDefinition>jcr:content</ChildNodeDefinition>    
+            <RequiredPrimaryTypes>nt:base</RequiredPrimaryTypes>
+            <DefaultPrimaryType></DefaultPrimaryType>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>true</isMandatory>
+            <OnParentVersion>COPY</OnParentVersion>
+            <isProtected>false</isProtected>
+            <SameNameSiblings>false</SameNameSiblings> 
+        </user_values>
+    </type>
+
+    <!-- nt:linkedFile -->
+    <type name="nt_linkedFile" table="phpcr_nt_linked_file" metadata="false" extends="nt_hierarchyNode">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <!-- JCR properties of nt:linkedFile Node -->
+        <property name="jcr-content" type="string" field="jcr_content" default="nt:linkedFile">
+            <description>The type of a node</description>
+            <RequiredType>REFERENCE</RequiredType>
+            <getOnParentVersion></getOnParentVersion>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>true</isMandatory>
+            <isProtected>false</isProtected>
+            <isMultiple>false</isMultiple>
+        </property>
+
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Supertypes>nt:hierarchyNode</Supertypes>
+            <isMixin>false</isMixin>
+            <HasOrderableChildNodes>false</HasOrderableChildNodes>    
+            <PrimaryItemName>jcr:content</PrimaryItemName>    
+            <OriginalName>nt:linkedFile</OriginalName> 
+        </user_values>
+    </type>
+
+    <!-- nt:unstructured -->
+    <type name="nt_unstructured" table="phpcr_nt_unstructured" metadata="false" extends="nt_base">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+
+        <!-- JCR properties of nt:unstructured Node - derived from abstract nt_base -->
+
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Supertypes>nt:base</Supertypes>
+            <isMixin>false</isMixin>
+            <HasOrderableChildNodes>true</HasOrderableChildNodes>    
+            <PrimaryItemName></PrimaryItemName>
+            <ChildNodeDefinition>*</ChildNodeDefinition>    
+            <RequiredPrimaryTypes>nt:base</RequiredPrimaryTypes>
+            <DefaultPrimaryType>nt:unstructured</DefaultPrimaryType>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <OnParentVersion>VERSION</OnParentVersion>
+            <isProtected>false</isProtected>
+            <SameNameSiblings>true</SameNameSiblings> 
+        </user_values>
+    </type>
+
+    <!-- nt:resource -->
+    <type name="nt_resource" table="phpcr_nt_resource" metadata="false" extends="nt_base, mix_referenceable, mix_mimeType, mix_lastModified">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+
+        <property name="jcr-data" type="string" field="jcr_data">
+            <description>Binary data</description>
+            <RequiredType>BINARY</RequiredType>
+            <getOnParentVersion>COPY</getOnParentVersion>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>true</isMandatory>
+            <isProtected>false</isProtected>
+            <isMultiple>false</isMultiple>
+            <ValueConstraints></ValueConstraints>
+            <DefaultValues></DefaultValues>
+        </property>
+
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Supertypes>nt:base mix:referenceable mix:mimeType mix:lastModified</Supertypes>
+            <isMixin>false</isMixin>
+            <HasOrderableChildNodes>false</HasOrderableChildNodes>    
+            <PrimaryItemName>jcr:data</PrimaryItemName>
+            <RequiredPrimaryTypes>nt:hierarchyNode</RequiredPrimaryTypes>
+            <DefaultPrimaryType></DefaultPrimaryType>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <OnParentVersion>VERSION</OnParentVersion>
+            <isProtected>false</isProtected>
+            <SameNameSiblings>false</SameNameSiblings> 
+        </user_values>
+    </type>
+
+    <!-- nt:query -->
+    <type name="nt_query" table="phpcr_nt_query" metadata="false" extends="nt_base">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="jcr-statement" type="string" field="jcr_statement">
+            <description>Query statement</description>
+            <RequiredType>STRING</RequiredType>
+            <getOnParentVersion>COPY</getOnParentVersion>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <isProtected>false</isProtected>
+            <isMultiple>false</isMultiple>
+            <ValueConstraints></ValueConstraints>
+            <DefaultValues></DefaultValues>
+        </property>
+        <property name="jcr-language" type="string" field="jcr_language">
+            <description>Query language</description>
+            <RequiredType>STRING</RequiredType>
+            <getOnParentVersion>COPY</getOnParentVersion>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <isProtected>false</isProtected>
+            <isMultiple>false</isMultiple>
+            <ValueConstraints></ValueConstraints>
+            <DefaultValues></DefaultValues>
+        </property>
+
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Description>This node type may be used to store a persistent query.</Description>
+            <Supertypes>nt:base</Supertypes>
+            <isMixin>false</isMixin>
+            <HasOrderableChildNodes>false</HasOrderableChildNodes>    
+            <PrimaryItemName></PrimaryItemName>
+            <RequiredPrimaryTypes></RequiredPrimaryTypes>
+            <DefaultPrimaryType></DefaultPrimaryType>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <OnParentVersion>VERSION</OnParentVersion>
+            <isProtected>false</isProtected>
+            <SameNameSiblings>false</SameNameSiblings> 
+        </user_values>
+    </type>
+
+    <!-- nt:address -->
+    <type name="nt_address" table="phpcr_nt_address" metadata="false" extends="nt_base">
+        <property name="id" type="unsigned integer" primaryfield="id">
+            <description>Local non-replication-safe database identifier</description>
+        </property>
+        <property name="jcr-protocol" type="string" />
+        <property name="jcr-host" type="string" />
+        <property name="jcr-port" type="string" />
+        <property name="jcr-repository" type="string" />
+        <property name="jcr-path" type="string">
+            <RequiredType>STRING</RequiredType>
+        </property>
+
+        <!-- Node and NodeType definitions -->
+        <user_values>
+            <Supertypes>nt:address</Supertypes>
+            <isMixin>false</isMixin>
+            <PrimaryItemName></PrimaryItemName>
+            <RequiredPrimaryTypes></RequiredPrimaryTypes>
+            <DefaultPrimaryType></DefaultPrimaryType>
+            <isAutoCreated>false</isAutoCreated>
+            <isMandatory>false</isMandatory>
+            <OnParentVersion>VERSION</OnParentVersion>
+            <isProtected>false</isProtected>
+            <SameNameSiblings>false</SameNameSiblings> 
+        </user_values>
+    </type>
+
+</Schema>

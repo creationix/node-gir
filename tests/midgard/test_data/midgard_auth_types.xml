@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Authentication xmlns="http://www.midgard-project.org/authentication/types">
+
+  <type name="Legacy">
+    <description/>
+    <id>1</id>
+  </type>
+
+  <type name="Plaintext">
+    <description/>
+    <id>2</id>
+  </type>
+  
+  <type name="OpenID">
+    <description/>
+    <id>3</id>
+  </type>
+  
+  <type name="PAM">
+    <description/>
+    <id>4</id>
+  </type>
+  
+  <type name="Kerberos">
+    <description/>
+    <id>5</id>
+  </type>
+
+  <type name="gpg">
+    <description/>
+    <id>6</id>
+  </type>
+  
+  <type name="Shibboleth">
+    <description/>
+    <id>7</id>
+  </type>
+  
+  <type name="OAuth">
+    <description/>
+    <id>8</id>
+  </type>
+ 
+  <type name="Facebook">
+    <description/>
+    <id>9</id>
+  </type>
+
+  <type name="SHA1">
+    <description/>
+    <id>10</id>
+  </type>
+
+  <type name="SHA256">
+    <description/>
+    <id>11</id>
+  </type>
+
+  <type name="MD5">
+    <description/>
+    <id>12</id>
+  </type>
+
+  <type name="APIkey">
+    <description/>
+    <id>13</id>
+  </type>
+
+	<type name="LDAP">
+    <description/>
+    <id>14</id>
+  </type>
+
+	<type name="BrowserID">
+		<description/>
+		<id>15</id>
+	</type>
+
+</Authentication>
