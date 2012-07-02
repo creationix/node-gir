@@ -1,16 +1,16 @@
 /**
  *  Example use of this module:
  *    var gir = require('./path/to/gir.js')
- *     ,  gtk = gir.load('Gtk', '3.0');
+ *     ,  gtk = gir.import('Gtk', '3.0');
  **/
 
-//import gir library and EventEmitter
-var gir = module.exports = require('./build/Release/girepository.node')
+//define export object, import girepository and EventEmitter onto export object
+var gir = module.exports = { '_girepository': require('./build/Release/girepository.node') }
  ,  EventEmitter = require('events').EventEmitter;
 
 /******************************************************************************/
 
-/* BEGIN HELPERS */
+/* BEGIN EXTERNAL HELPERS */
 
 /**
  * Adopted from jquery's extend method. Under the terms of MIT License.
@@ -152,50 +152,176 @@ function makeArray(array, results) {
   return ret;
 } 
 
-/* END HELPERS */
+/* END EXTERNAL HELPERS */
+
+/******************************************************************************/
+
+/* BEGIN INTERNAL HELPERS */
+
+/**
+ * Converts underscored_names or dashed-names to properCamelCasing.
+ **/
+function camelCase(x) {
+  return x.replace(/[-]+/g, function (h) {
+    return '_';
+  }).replace(/\_[a-z]/g, function(h) {
+    return h.substr(1).toUpperCase();
+  });
+}
+
+/**
+ * Creates a onCamelCasedEvent() on the instance object's prototype that
+ * matches the specified regular_event_name. The method will be dispatched
+ * to on('event_name', callback). e.g. onNotify, onClosed, onDestroy
+ **/
+function defineInstanceEvent(obj, event_name) {
+  var camelEventName = camelCase('on_'+event_name);
+  //add event handler to object if possible
+  if (!obj.prototype[camelEventName])
+    //converts method name to camelCasing on the object
+    obj.prototype[camelCase('on_'+event_name)] = function(event_name) {
+      var invocation = function() {
+        var args = Array.prototype.slice.call(arguments);
+        if (args == undefined) args = [function noCallback() { }];
+        args.unshift(event_name);
+        //debug:console.log('called',event_name,'in',obj,'with',args[1]);
+        return this.on.apply(this, args);
+      };
+      return invocation;
+    }(event_name);
+}
+
+/**
+ * Creates a camelCasedMethod() on the instance object's prototype that
+ * matches the specified regular_method_name. The method will be dispatched
+ * to __call__('method_name', arg0, argx, ...).
+ **/
+function defineInstanceMethod(obj, method_name) {
+  var camelMethodName = camelCase(method_name);
+  //add method handler to object if possible
+  if (!obj.prototype[camelMethodName])
+    //converts method name to camelCasing on the object
+    obj.prototype[camelMethodName] = function(method_name) {
+      //the internal function does all the hard work
+      var invocation = function() {
+        var args = Array.prototype.slice.call(arguments);
+        if (args == undefined) args = new Array();
+        args.unshift(method_name);
+        //this helped me to catch a recent problem with object.cc
+        //debug:console.log('called',method_name,'in',obj);
+        //debug:for (var x in obj) console.log(x);
+        return this.__call__.apply(this, args);
+      };
+      return invocation;
+    }(method_name);
+  //else
+    //debug:console.warn("[node-gir] " + subobj + " object provides it's own " + method_name + " method. Not replacing existing method. :-(");
+    
+  //Not sure if this would do anything positive:
+  //Check for new(), and makes new() the default constructor if it's in the gir object.
+  //Disabled until it would serve useful. It simply assigns the new() function as
+  //the JS constructor for the object. There is a small problem: some objects have multiple
+  //new() functions, probably due to object inheritence or overloading. :~ Not sure really,
+  //but it seems to add no new functionality while simultaneously not taking anything away.
+  //It may be thrown away in a future commit if it is decidedly useless.
+  //DISABLED:
+  /*if (method_name == 'new') {
+    //debug:console.log('[node-gir] Using new() as the default constructor for', subobj, 'provided by gir.');
+    obj[subobj].prototype.constructor = defineObjectMethod(obj[subobj], 'new');
+  }*/
+}
+
+/**
+ * Creates a camelCasedVFunc() on the instance object's prototype that
+ * matches the specified regular_method_name. The method will be dispatched
+ * to __call_v_func__('v_func_name', arg0, argx, ...).
+ **/
+function defineInstanceVFunc(obj, v_name) {
+  var camelVName = camelCase(v_name);
+  //add method handler to object if possible
+  if (!obj.prototype[camelVName])
+    //converts method name to camelCasing on the object
+    obj.prototype[camelVName] = function(v_name) {
+      //the internal function does all the hard work
+      var invocation = function() {
+        var args = Array.prototype.slice.call(arguments);
+        if (args == undefined) args = new Array();
+        args.unshift(v_name);
+        //call the method on the gir provided object
+        //debug:console.log('called',v_name,'in',obj);
+        this.__call_v_func__.apply(this, args);
+      };
+      return invocation;
+    }(v_name);
+  //else
+    //debug:console.warn("[node-gir] " + subobj + " object provides it's own " + method_name + " method. Not replacing existing method. :-(");
+}
+
+/**
+ * Creates a camelCasedProperty on the instance object's prototype that
+ * matches the specified regular-property-name. The getter is dispatched to
+ * __get_property__('property-name'). The setter is dispatched to
+ * __set_property__('property-name', value).
+ **/
+//added try{}catch{} block because of TypeError: Illegal invocation, in what appears
+//to be accessing beyond object access boundaries, e.g. trying to access a private member, or
+//setting a getter-only property, or something to that effect.
+//perhaps someone can figure out why this version throws TypeError: Illegal invocation 
+//across certain boundaries while the swick/node-gir does not :~ could be a diff in binaries
+function defineInstanceProperty(obj, property_name) {
+  var camelPropertyName = camelCase(property_name);
+  //add property handler to object if possible
+  if (!obj.prototype[camelPropertyName]) {
+    obj.prototype.__defineGetter__(camelPropertyName, function() {
+      try {
+        return this.__get_property__.apply(this, [property_name]);
+      } catch (err) {
+        //debug:console.warn('[node-gir] Error trying to install getter ' + camelCase(property_name) + '.', err);
+        return undefined;
+      }
+    });
+    obj.prototype.__defineSetter__(camelPropertyName, function(newValue) {
+      try {
+        return this.__set_property__.apply(this, [property_name, newValue]);
+      } catch (err) {
+        //debug:console.warn('[node-gir] Error trying to install setter ' + camelCase(property_name) + '.', err);
+        return newValue;
+      }
+    });
+  }
+  //else
+    //debug:console.warn("[node-gir] " + subobj + " object provides it's own " + property_name + " property. Not replacing existing property. :-(");
+}
+
+/* END INTERNAL HELPERS */
 
 /******************************************************************************/
 
 /* BEGIN LOGIC */
 
 //save default module routines
-gir._gir_baseInit = gir.init;
-gir._gir_baseLoad = gir.load;
+gir._girepository.__init__ = gir._girepository.init;
+gir._girepository.__import__ = gir._girepository.import;
 
 //add init flag property
-gir._gir_hasInit = false;
+gir._girepository._has_init = false;
 
 //override default init
-gir.init = function() {
+gir._girepository.init = function() {
   //don't init twice, seems useless to do so
-  if (!this._gir_hasInit) {
-    this._gir_hasInit = true;
-    return gir['_gir_baseInit'].apply(this, Array.prototype.slice.call(arguments));
+  if (!gir._girepository._has_init) {
+    gir._girepository._has_init = true;
+    return gir._girepository.__init__.apply(gir._girepository, Array.prototype.slice.call(arguments));
   }
 };
 
-//create callable method object
-function CallableMethod(methodName) {
-  //the internal function does all the hard work
-  var invocation = function() {
-    var args = Array.prototype.slice.call(arguments);
-    if (args == undefined) args = new Array();
-    for (var i = args.length; i > 0; i--)
-      args[i] = args[i-1];
-    args[0] = methodName;
-    //call the method on the gir provided object
-    this.__call__.apply(this, args);
-  };
-  return invocation;
-}
-
-//override default loader
-gir.load = function() {
+//override default namespace loader
+gir.load = gir.import = gir._girepository.import = function() {
   //auto-init if needed
-  if (!this._gir_hasInit) this.init();
+  if (!gir._girepository._has_init) gir._girepository.init();
   
   //load gir module
-  var obj = gir['_gir_baseLoad'].apply(this, Array.prototype.slice.call(arguments));
+  var obj = gir._girepository.__import__.apply(gir._girepository, Array.prototype.slice.call(arguments));
   
   //check for error
   if (!obj) return obj;
@@ -203,8 +329,12 @@ gir.load = function() {
   //TODO: consider storing loaded module gir somewhere now so that it can be unloaded later ?
   
   //for each object within the loaded gir module:
-  //  task 1. figure out which loaded objects can trigger events, and add EventEmitter as needed
-  //  task 2. make method names callable methods
+  //  task 1: add EventEmitter as needed
+  //  task 2: setup signals as onEventNames shortcut functions
+  //  task 3: expose methods and make them callable
+  //  task 4: expose vfuncs and make them callable
+  //  task 5: expose properties and make them settable/gettable
+  //  task 6: expose fields and make them settable/gettable
   for (var subobj in obj) {
     //task 1: add EventEmitter as needed
     //determine whether eventable
@@ -214,41 +344,95 @@ gir.load = function() {
       //combine EventEmitter logic with eventable gir objects
       extend(true, obj[subobj].prototype, EventEmitter.prototype);
       //check for prop __watch_signal__, if found, override EventEmitter.on()
-      if (obj[subobj].prototype['__watch_signal__'] != undefined) {
-        obj[subobj].prototype._baseEventEmitter_on = obj[subobj].prototype.on;
+      if (obj[subobj]['__signals__'] != undefined) {
+        obj[subobj].prototype._EventEmitter_on = obj[subobj].prototype.on;
         obj[subobj].prototype.on = function () {
+          var args = Array.prototype.slice.call(arguments);
           //tell gir loaded object to listen for the signal
-          this.__watch_signal__(arguments[0]);
-          //dispatch normally
-          this._baseEventEmitter_on(arguments[0], arguments[1]);
+          if (this['__watch_signal__'] != undefined)
+            this.__watch_signal__(args[0]);
+          //console.log('on hit with', args);
+          //dispatch EventEmitter normally
+          this._EventEmitter_on.apply(this, args);
         };
       }
     }
 
-    //task 2: expose object methods to objects and make them callable
+    //task 2: setup signals as onEventNames shortcut functions
+    //task 3: expose methods and make them callable
+    //task 4: expose vfuncs and make them callable
+    //task 5: expose properties and make them settable/gettable
+    //task 6: expose fields and make them settable/gettable
     for (var prop in obj[subobj]) {
       switch (prop) {
-        case '__methods__':
-          for (var method_offset in obj[subobj][prop]) {
-            var method_name = obj[subobj][prop][method_offset];
-            //debug:console.log(subobj + '.'  + method_name + '() discovered');
-            //add method handler to object if possible
-            if (obj[subobj].prototype[method_name] != undefined)
-              {}//debug:console.warn("[node-gir] " + subobj + " object provides it's own " + method_name + " method. Not replacing existing method. :-(");
-            else
-              obj[subobj].prototype[method_name] = CallableMethod(method_name);
+        case '__signals__':  //task 2
+          for (var signal in obj[subobj][prop]) {
+            var signal_name = obj[subobj][prop][signal];
+            defineInstanceEvent(obj[subobj], signal_name);
+          }
+          break;
+        case '__methods__':  //task 3
+          for (var method in obj[subobj][prop]) {
+            var method_name = obj[subobj][prop][method];
+            defineInstanceMethod(obj[subobj], method_name);
+          }
+          break;
+        case '__v_funcs__':  //task 4
+          for (var v in obj[subobj][prop]) {
+            var v_name = obj[subobj][prop][v];
+            //i don't yet know the value of a v_func
+            defineInstanceVFunc(obj[subobj], v_name);
+          }
+          break;
+        case '__properties__':  //task 5
+          for (var property in obj[subobj][prop]) {
+            var property_name = obj[subobj][prop][property];
+            defineInstanceProperty(obj[subobj], property_name);
+          }
+          break;
+        case '__fields__':  //task 6
+          for (var field in obj[subobj][prop]) {
+            var field_name = obj[subobj][prop][field];
+            //this requires changes to the C++ code
+            //add field reference if possible
+            //if (!obj[subobj].prototype[field_name])
+              //defineInstanceField(obj[subobj], field_name);
+            //debug:console.log('found field', field_name, 'in', subobj);
           }
           break;
       }
     }
-    //console.log(subobj, obj[subobj]);
+    
+    //keep the object name in the object for reflection
+    if (obj[subobj].__name__ != undefined)
+      console.warn("[node-gir]", arguments[0]+'.'+subobj, "provides it's own __name__. Not replacing __name__.");
+    else
+      obj[subobj].__name__ = subobj;
+      
+    //keep the namespace loader in the loaded object in case caller wants to reuse the loader
+    if (obj[subobj].__gir__ != undefined)
+      console.warn("[node-gir]", arguments[0], "provides it's own __gir__. Not replacing __gir__. Strange error? :-(");
+    else
+      obj[subobj].__gir__ = this;
   }
 
-  //keep the loader in the loaded object in case caller wants to reuse the loader
-  if (obj.gir != undefined)
-    console.warn("[node-gir] Object provides it's own gir. Not replacing gir. Strange error? :-(");
+  //keep the namespace name in the loaded object for reflection
+  if (obj.__name__ != undefined)
+    console.warn("[node-gir]", arguments[0], "provides it's own __name__. Not replacing __name__.");
   else
-    obj.gir = this;
+    obj.__name__ = arguments[0];
+
+  //keep the namespace version in the loaded object for reflection
+  if (obj.__version__ != undefined)
+    console.warn("[node-gir]", arguments[0], "provides it's own __version__. Not replacing __version__.");
+  else
+    obj.__version__ = arguments[1] ? arguments[1] : gir._girepository.getVersion(arguments[0]);
+    
+  //keep the namespace loader in the loaded namespace in case caller wants to reuse the loader
+  if (obj.__gir__ != undefined)
+    console.warn("[node-gir]", arguments[0], "provides it's own __gir__. Not replacing __gir__. Strange error? :-(");
+  else
+    obj.__gir__ = this;
 
   //return the brutally overridden object
   return obj;

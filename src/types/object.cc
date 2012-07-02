@@ -226,8 +226,13 @@ void GIRObject::Initialize(Handle<Object> target, char *namespace_) {
     std::vector<ObjectFunctionTemplate>::iterator it;
     std::vector<ObjectFunctionTemplate>::iterator temp;
     GIObjectInfo* parent;
+    std::vector<const char*> roots;
+    Handle<Array> objs = Array::New(templates.size());
     
+    int i = 0;
     for(it = templates.begin(); it != templates.end(); ++it) {
+        objs->Set(i++, String::New(g_base_info_get_name(it->info)));
+        
         parent = g_object_info_get_parent(it->info);
         if(strcmp(it->namespace_, namespace_) != 0 || !parent) {
             continue;
@@ -236,7 +241,11 @@ void GIRObject::Initialize(Handle<Object> target, char *namespace_) {
         for(temp = templates.begin(); temp != templates.end(); ++temp) {
             if(g_base_info_equal(temp->info, parent)) {
                 it->function->Inherit(temp->function);
+                break;
             }
+        }
+        if(temp == templates.end()) {
+            roots.push_back(g_base_info_get_name(it->info));
         }
     }
     for(it = templates.begin(); it != templates.end(); ++it) {
@@ -244,6 +253,16 @@ void GIRObject::Initialize(Handle<Object> target, char *namespace_) {
             target->Set(String::NewSymbol(g_base_info_get_name(it->info)), it->function->GetFunction());
         }
     }
+    
+    int rootsLength = roots.size();
+    Handle<Array> v8roots = Array::New(rootsLength);
+    i = 0;
+    for(std::vector<const char*>::iterator it = roots.begin(); it != roots.end(); it++) {
+        v8roots->Set(i++, String::New(*it));
+    }
+    
+    target->Set(String::New("__roots__"), v8roots);
+    target->Set(String::New("__objects__"), objs);
     
     emit_symbol = NODE_PSYMBOL("emit");
 }

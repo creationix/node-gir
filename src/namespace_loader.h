@@ -14,9 +14,14 @@ class NamespaceLoader {
     static std::map<char *, GITypelib*> type_libs;
     
     static void Initialize(v8::Handle<v8::Object> target);
-    static v8::Handle<v8::Value> Load(const v8::Arguments &args);
+    static v8::Handle<v8::Value> Import(const v8::Arguments &args);
     
     static v8::Handle<v8::Value> SearchPath(const v8::Arguments &args);
+    static v8::Handle<v8::Value> IsRegistered(const v8::Arguments &args);
+    static v8::Handle<v8::Value> GetDependencies(const v8::Arguments &args);
+    static v8::Handle<v8::Value> LoadedNamespaces(const v8::Arguments &args);
+    static v8::Handle<v8::Value> GetVersion(const v8::Arguments &args);
+    static v8::Handle<v8::Value> GetVersions(const v8::Arguments &args);
 
   private:
     static v8::Handle<v8::Value> LoadNamespace(char *namespace_, char *version);
