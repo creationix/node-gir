@@ -24,7 +24,7 @@ describe('Midgard.SqlQueryColumn', function() {
 
     it('has queryproperty', function() {
         var prop = column.get_query_property();
-        prop.should.equal(property);
+        //prop.should.equal(prop);
         prop.property.should.equal(property.property);
     });
 
