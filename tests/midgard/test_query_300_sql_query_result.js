@@ -31,7 +31,6 @@ describe('Midgard.SqlQueryResult', function() {
         result = select.get_query_result();
         result.should.be.a('object');
         var rows = result.get_rows();
-        console.log(typeof(rows));
         Array.isArray(rows).should.equal(true);
         rows.length.should.equal(1);
     });
