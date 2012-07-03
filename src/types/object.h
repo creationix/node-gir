@@ -35,6 +35,7 @@ class GIRObject : public node::ObjectWrap {
   public:
     GIRObject() {};
     GIRObject(GIObjectInfo *info_, int n_params, GParameter *parameters);
+    virtual ~GIRObject();
     
     GObject *obj;
     bool abstract;

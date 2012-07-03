@@ -168,6 +168,13 @@ Handle<Value> GIRObject::New(const Arguments &args)
     return scope.Close(args.This());
 }
 
+GIRObject::~GIRObject() 
+{
+    // This destructor willbe called only (and only) if object is garabage collected
+    // For persistant destructor see Node::AtExit
+    // http://prox.moraphi.com/index.php/https/github.com/bnoordhuis/node/commit/1c20cac
+}
+
 bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GIObjectInfo *info) 
 { 
     *length = 0;
