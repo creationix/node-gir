@@ -41,6 +41,14 @@ describe('Signals', function() {
             from_connection_callback.should.equal('MGD_ERR_OK');
         });
 
+        it('invalid signal name', function() {
+            try {
+                win.on('invalid-name', function() { });
+            } catch (err) {
+                // do nothing
+            }
+        });
+
     });
 
     describe('Midgard.Object', function() {
@@ -63,6 +71,19 @@ describe('Signals', function() {
             obj.purge('false');
             from_object_callback.should.equal('Object purge');
             from_connection_callback.should.equal('MGD_ERR_OK');
+        });
+
+        it('invalid signal name', function() {
+            try {
+                obj.on('invalid-name', function() { });
+            } catch (err) {
+                // do nothing
+            }
+            try {
+                obj.on('invalid_name', function() { });
+            } catch (err) {
+                // do nothing
+            }
         });
     });
 });
