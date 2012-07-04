@@ -795,10 +795,12 @@ GISignalInfo *GIRObject::FindSignal(GIObjectInfo *inf, char *name)
     GISignalInfo *signal = g_object_info_find_signal(inf, name);
     if (!signal) {
         GIObjectInfo *parent = g_object_info_get_parent(inf);
-        if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
-            signal = FindSignal(parent, name);
+        if (parent) {
+            if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
+                signal = FindSignal(parent, name);
+            }
+            g_base_info_unref(parent);
         }
-        g_base_info_unref(parent);
     }
     return signal;
 }
