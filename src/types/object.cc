@@ -155,10 +155,10 @@ Handle<Value> GIRObject::New(const Arguments &args)
     
     int length = 0;
     GParameter *params = NULL;
-    if (!ToParams(args[0], &params, &length, info)) {
-        return BAD_ARGS("Failed to convert arguments to GParameter");
-    }
-   
+    Handle<Value> v = ToParams(args[0], &params, &length, info);
+    if (v != Null())
+        return v;
+  
     GIRObject *obj = new GIRObject(info, length, params);
     DeleteParams(params, length);
     
@@ -175,12 +175,12 @@ GIRObject::~GIRObject()
     // http://prox.moraphi.com/index.php/https/github.com/bnoordhuis/node/commit/1c20cac
 }
 
-bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GIObjectInfo *info) 
+Handle<Value> GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GIObjectInfo *info) 
 { 
     *length = 0;
     *params = NULL;
     if (!val->IsObject()) {
-        return true;
+        return Null();
     }
     Handle<Object> obj = val->ToObject();
     
@@ -195,7 +195,8 @@ bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GI
         
         if (!FindProperty(info, *key)) { 
             DeleteParams(*params, (*length)-1);
-            return false;
+            gchar *msg = g_strdup_printf("Can not find '%s' property", *key);
+            return EXCEPTION(msg); 
         }
         
         GValue gvalue = {0,};
@@ -210,13 +211,14 @@ bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GI
         } 
         if (!GIRValue::ToGValue(obj->Get(props->Get(i)), value_type, &gvalue)) {
             DeleteParams(*params, (*length)-1);
-            return false;
+            gchar *msg = g_strdup_printf("'%s' property value conversion failed", *key);
+            return EXCEPTION(msg); 
         }
         
         (*params)[i].name = g_strdup(*key);
         (*params)[i].value = gvalue;
     }
-    return true;
+    return Null();
 }
 
 void GIRObject::DeleteParams(GParameter *params, int l) 
