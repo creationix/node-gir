@@ -13,5 +13,12 @@
   },
   "engines": {
     "node": "*"
+  },
+  "devDependencies": {
+    "should": "1.0.x",
+    "mocha": "1.3.x"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha test/midgard/test_*.js"
   }
 }
