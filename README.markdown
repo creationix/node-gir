@@ -6,7 +6,23 @@ automatic and dynamic calls to any library that has GI annotations installed.
 This will make it possible to script a gnome desktop system entirely from node
 much in the way it's done today with Seed, GJS or pygtk.
 
-## Arcitecture
+## Installation
+
+You need GObject Introspection library to be installed. On a Debian-like system this would be handled by:
+
+    $ sudo apt-get install libgirepository1.0-dev
+
+Then just build node-gir with:
+
+    $ npm install
+
+## Testing
+
+The node-gir repository comes with a set of tests that utilize the Midgard2 library to test against. You need also that installed, and then run:
+
+    $ npm test
+
+## Architecture
 
 The following graph shows all the parts and how they work together.  The only
 missing part is node bindings to libgirepository.  Hence this project.
