@@ -1,12 +1,31 @@
 # node-gir
 
-Node-gir is node bindings to the girepository library making it possible to make
-automatic and dynamic calls to any library that has GI annotations installed.  
+Node-gir is Node.js bindings to [GObject Introspection](https://live.gnome.org/GObjectIntrospection/) making it possible to make automatic and dynamic calls to any library that has GI annotations installed. This includes most libraries from the [GNOME project](http://developer.gnome.org/).
 
-This will make it possible to script a gnome desktop system entirely from node
-much in the way it's done today with Seed, GJS or pygtk.
+This will make it possible to script a GNOME desktop system entirely from node
+much in the way it's done today with Seed, GJS or pygtk. It also allows using GNOME libraries in Node.js applications.
 
-## Arcitecture
+## Installation
+
+You need GObject Introspection library to be installed. On a Debian-like system this would be handled by:
+
+    $ sudo apt-get install libgirepository1.0-dev
+
+Then just build node-gir with:
+
+    $ npm install
+
+## Testing
+
+The node-gir repository comes with a set of tests that utilize the Midgard2 library to test against. You need also that installed, and then run:
+
+    $ npm test
+
+Travis is used for Continous Integration:
+
+[![Build Status](https://secure.travis-ci.org/piotras/node-gir.png?branch=master)](http://travis-ci.org/piotras/node-gir)
+
+## Architecture
 
 The following graph shows all the parts and how they work together.  The only
 missing part is node bindings to libgirepository.  Hence this project.

@@ -1,9 +1,8 @@
-language: python
+language: node_js
+node_js:
+  - 0.6
+  - 0.8
 
-before_script:
-  - ./tests/travis_midgard.sh
+before_install: tests/travis_midgard.sh
 
-script: sh -c "cd tests/midgard&&node ../../node_modules/mocha/bin/mocha test_*.js" 
-
-#notifications:
-#    irc: "irc.freenode.org#midgard"
+script: npm test

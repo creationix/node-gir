@@ -12,7 +12,3 @@ wget -q https://github.com/midgardproject/midgard-core/tarball/${MIDGARD_EXT_VER
 tar -xzf ratatoskr
 sh -c "cd midgardproject-midgard-core-*&&./autogen.sh --prefix=/usr; make; sudo make install"
 rm -f ${MIDGARD_EXT_VERSION}
-
-npm install mocha
-npm install should
-npm install
