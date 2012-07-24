@@ -21,6 +21,10 @@ The node-gir repository comes with a set of tests that utilize the Midgard2 libr
 
     $ npm test
 
+Travis is used for Continous Integration:
+
+[![Build Status](https://secure.travis-ci.org/piotras/node-gir.png?branch=master)](http://travis-ci.org/piotras/node-gir)
+
 ## Architecture
 
 The following graph shows all the parts and how they work together.  The only
