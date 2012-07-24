@@ -5,8 +5,6 @@ node_js:
 
 before_script:
   - tests/travis_midgard.sh
+  - npm install
 
 script: npm test
-
-#notifications:
-#    irc: "irc.freenode.org#midgard"
