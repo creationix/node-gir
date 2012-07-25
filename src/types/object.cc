@@ -71,7 +71,7 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_)
     
     GIObjectInfo *object_info = _get_object_info(G_OBJECT_TYPE(obj_), info_);
     for (it = templates.begin(); it != templates.end(); ++it) {
-       if (g_base_info_equal(object_info, it->info)) {
+       if (object_info != NULL && g_base_info_equal(object_info, it->info)) {
             res = it->function->GetFunction()->NewInstance(1, &arg);
             if (!res.IsEmpty()) {
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
@@ -84,7 +84,9 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_)
             break;
         }
     }
-    g_base_info_unref(object_info);
+    if (object_info)
+	    g_base_info_unref(object_info);
+
     return Null();
 }
 
