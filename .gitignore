@@ -1,2 +1,5 @@
 build
 .lock-wscript
+node_modules/
+npm-debug.log
+tests/midgard/test_data/*.db

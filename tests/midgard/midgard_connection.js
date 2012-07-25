@@ -7,7 +7,7 @@ Midgard = gir.load('Midgard');
 Midgard.init();
 
 config = new Midgard.Config();
-config.read_file_at_path('test_SQLITE.conf');
+config.read_file_at_path(__dirname + '/test_SQLITE.conf');
 
 mgd = new Midgard.Connection();
 mgd.open_config(config);

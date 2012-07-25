@@ -210,7 +210,7 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
                 return v8::Array::New(0);
             arr = v8::Array::New(array_length);
             for (i = 0; i < array_length; i++) { 
-                arr->Set(i, v8::Integer::New((int)(((gpointer*)arg->v_pointer)[i])));
+                arr->Set(i, v8::Integer::New((int)GPOINTER_TO_INT((((gpointer*)arg->v_pointer)[i]))));
             }
             return arr;
 

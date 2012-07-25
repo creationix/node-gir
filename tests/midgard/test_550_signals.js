@@ -10,7 +10,7 @@ var Midgard = gir.load('Midgard');
 Midgard.init();
 
 var config = new Midgard.Config();
-config.read_file_at_path('test_SQLITE.conf');
+config.read_file_at_path(__dirname + '/test_SQLITE.conf');
 
 var MidgardTest = require('./midgard_connection');
 
@@ -41,6 +41,14 @@ describe('Signals', function() {
             from_connection_callback.should.equal('MGD_ERR_OK');
         });
 
+        it('invalid signal name', function() {
+            try {
+                win.on('invalid-name', function() { });
+            } catch (err) {
+                // do nothing
+            }
+        });
+
     });
 
     describe('Midgard.Object', function() {
@@ -63,6 +71,19 @@ describe('Signals', function() {
             obj.purge('false');
             from_object_callback.should.equal('Object purge');
             from_connection_callback.should.equal('MGD_ERR_OK');
+        });
+
+        it('invalid signal name', function() {
+            try {
+                obj.on('invalid-name', function() { });
+            } catch (err) {
+                // do nothing
+            }
+            try {
+                obj.on('invalid_name', function() { });
+            } catch (err) {
+                // do nothing
+            }
         });
     });
 });

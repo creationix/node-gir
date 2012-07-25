@@ -71,7 +71,7 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_)
     
     GIObjectInfo *object_info = _get_object_info(G_OBJECT_TYPE(obj_), info_);
     for (it = templates.begin(); it != templates.end(); ++it) {
-       if (g_base_info_equal(object_info, it->info)) {
+       if (object_info != NULL && g_base_info_equal(object_info, it->info)) {
             res = it->function->GetFunction()->NewInstance(1, &arg);
             if (!res.IsEmpty()) {
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
@@ -84,7 +84,9 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_)
             break;
         }
     }
-    g_base_info_unref(object_info);
+    if (object_info)
+	    g_base_info_unref(object_info);
+
     return Null();
 }
 
@@ -155,10 +157,10 @@ Handle<Value> GIRObject::New(const Arguments &args)
     
     int length = 0;
     GParameter *params = NULL;
-    if (!ToParams(args[0], &params, &length, info)) {
-        return BAD_ARGS("Failed to convert arguments to GParameter");
-    }
-   
+    Handle<Value> v = ToParams(args[0], &params, &length, info);
+    if (v != Null())
+        return v;
+  
     GIRObject *obj = new GIRObject(info, length, params);
     DeleteParams(params, length);
     
@@ -168,12 +170,19 @@ Handle<Value> GIRObject::New(const Arguments &args)
     return scope.Close(args.This());
 }
 
-bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GIObjectInfo *info) 
+GIRObject::~GIRObject() 
+{
+    // This destructor willbe called only (and only) if object is garabage collected
+    // For persistant destructor see Node::AtExit
+    // http://prox.moraphi.com/index.php/https/github.com/bnoordhuis/node/commit/1c20cac
+}
+
+Handle<Value> GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GIObjectInfo *info) 
 { 
     *length = 0;
     *params = NULL;
     if (!val->IsObject()) {
-        return true;
+        return Null();
     }
     Handle<Object> obj = val->ToObject();
     
@@ -188,7 +197,8 @@ bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GI
         
         if (!FindProperty(info, *key)) { 
             DeleteParams(*params, (*length)-1);
-            return false;
+            gchar *msg = g_strdup_printf("Can not find '%s' property", *key);
+            return EXCEPTION(msg); 
         }
         
         GValue gvalue = {0,};
@@ -203,13 +213,14 @@ bool GIRObject::ToParams(Handle<Value> val, GParameter** params, int *length, GI
         } 
         if (!GIRValue::ToGValue(obj->Get(props->Get(i)), value_type, &gvalue)) {
             DeleteParams(*params, (*length)-1);
-            return false;
+            gchar *msg = g_strdup_printf("'%s' property value conversion failed", *key);
+            return EXCEPTION(msg); 
         }
         
         (*params)[i].name = g_strdup(*key);
         (*params)[i].value = gvalue;
     }
-    return true;
+    return Null();
 }
 
 void GIRObject::DeleteParams(GParameter *params, int l) 
@@ -788,10 +799,12 @@ GISignalInfo *GIRObject::FindSignal(GIObjectInfo *inf, char *name)
     GISignalInfo *signal = g_object_info_find_signal(inf, name);
     if (!signal) {
         GIObjectInfo *parent = g_object_info_get_parent(inf);
-        if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
-            signal = FindSignal(parent, name);
+        if (parent) {
+            if (strcmp( g_base_info_get_name(parent), g_base_info_get_name(inf) ) != 0) {
+                signal = FindSignal(parent, name);
+            }
+            g_base_info_unref(parent);
         }
-        g_base_info_unref(parent);
     }
     return signal;
 }
