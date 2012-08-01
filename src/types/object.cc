@@ -58,7 +58,6 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_)
 {
     // find the function template
     if (obj_ == NULL || !G_IS_OBJECT(obj_)) {
-
         return Null();
     }
 
@@ -68,10 +67,14 @@ Handle<Value> GIRObject::New(GObject *obj_, GIObjectInfo *info_)
     }
     Handle<Value> arg = Boolean::New(false);
     std::vector<ObjectFunctionTemplate>::iterator it;
-    
+
     GIObjectInfo *object_info = _get_object_info(G_OBJECT_TYPE(obj_), info_);
+    if (!object_info) {
+        gchar *msg = g_strdup_printf("ObjectInfo not found for '%s'", G_OBJECT_TYPE_NAME(obj_));
+        return EXCEPTION(msg);
+    }
     for (it = templates.begin(); it != templates.end(); ++it) {
-       if (object_info != NULL && g_base_info_equal(object_info, it->info)) {
+        if (g_base_info_equal(object_info, it->info)) {
             res = it->function->GetFunction()->NewInstance(1, &arg);
             if (!res.IsEmpty()) {
                 GIRObject *e = ObjectWrap::Unwrap<GIRObject>(res->ToObject());
@@ -189,6 +192,8 @@ Handle<Value> GIRObject::ToParams(Handle<Value> val, GParameter** params, int *l
     Handle<Array> props = obj->GetPropertyNames();
     *length = props->Length();
     *params = g_new0(GParameter, *length);
+    GParamSpec *pspec = NULL;
+    GObjectClass *klass = (GObjectClass*) g_type_class_ref(g_type_from_name(g_object_info_get_type_name(info)));
     for (int i=0; i<*length; i++) {
         String::Utf8Value key(props->Get(i)->ToString());
 
@@ -196,20 +201,27 @@ Handle<Value> GIRObject::ToParams(Handle<Value> val, GParameter** params, int *l
         (*params)[i].name = NULL;
         
         if (!FindProperty(info, *key)) { 
-            DeleteParams(*params, (*length)-1);
-            gchar *msg = g_strdup_printf("Can not find '%s' property", *key);
-            return EXCEPTION(msg); 
+            /* Try to find property spec registered for given class */
+            if (klass) {
+                pspec = g_object_class_find_property(klass, *key);
+            }
+
+            if (!pspec) {
+                DeleteParams(*params, (*length)-1);
+                gchar *msg = g_strdup_printf("Can not find '%s' property", *key);
+                return EXCEPTION(msg); 
+            }
         }
         
         GValue gvalue = {0,};
         GType value_type = G_TYPE_INVALID;
         // Determine the best match for property's type
-        GObjectClass *klass = (GObjectClass*) g_type_class_ref(g_type_from_name(g_object_info_get_type_name(info)));
         if (klass) {
-            GParamSpec *pspec = g_object_class_find_property(klass, *key);
+            if (!pspec)
+                pspec = g_object_class_find_property(klass, *key);
+
             if (pspec)
                 value_type = pspec->value_type;
-            g_type_class_unref(klass);
         } 
         if (!GIRValue::ToGValue(obj->Get(props->Get(i)), value_type, &gvalue)) {
             DeleteParams(*params, (*length)-1);
@@ -219,7 +231,13 @@ Handle<Value> GIRObject::ToParams(Handle<Value> val, GParameter** params, int *l
         
         (*params)[i].name = g_strdup(*key);
         (*params)[i].value = gvalue;
+
+        pspec = NULL;
     }
+
+    if (klass)
+        g_type_class_unref(klass);
+
     return Null();
 }
 
@@ -407,7 +425,7 @@ Handle<Value> GIRObject::Emit(Handle<Value> argv[], int length)
     
     // this will do the magic but dont forget to extend this object in JS from require("events").EventEmitter
     Local<Value> emit_v = handle_->Get(emit_symbol);
-    if (!emit_v->IsFunction()) return Null();
+    if (emit_v->IsUndefined() || !emit_v->IsFunction()) return Null();
     Local<Function> emit = Local<Function>::Cast(emit_v);
     return emit->Call(handle_, length, argv);
 }
@@ -450,15 +468,17 @@ void GIRObject::SignalCallback(GClosure *closure,
         GValue p = param_values[i];
         args[i+1] = GIRValue::FromGValue(&p, NULL);
     }
-    
+   
+    printf ("EMIT \n");
     Handle<Value> res = data->that->Emit(args, n_param_values+1);
     if (res != Null()) {
-        //GIRValue::ToGValue(res, return_value);
+        //printf ("Call ToGValue '%s'\n", G_VALUE_TYPE_NAME(return_value));
+        GIRValue::ToGValue(res, G_TYPE_UINT, return_value);
     }
 }
 
 void GIRObject::SignalFinalize(gpointer marshal_data, GClosure *c) 
-{
+{ 
     MarshalData *data = (MarshalData*)marshal_data;
     delete[] data->event_name;
     delete[] data;
