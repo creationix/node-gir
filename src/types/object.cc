@@ -469,11 +469,11 @@ void GIRObject::SignalCallback(GClosure *closure,
         args[i+1] = GIRValue::FromGValue(&p, NULL);
     }
    
-    printf ("EMIT \n");
     Handle<Value> res = data->that->Emit(args, n_param_values+1);
     if (res != Null()) {
         //printf ("Call ToGValue '%s'\n", G_VALUE_TYPE_NAME(return_value));
-        GIRValue::ToGValue(res, G_TYPE_UINT, return_value);
+        if (return_value && G_IS_VALUE(return_value))
+            GIRValue::ToGValue(res, G_VALUE_TYPE(return_value), return_value);
     }
 }
 
