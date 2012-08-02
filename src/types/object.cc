@@ -422,10 +422,19 @@ void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name)
 Handle<Value> GIRObject::Emit(Handle<Value> argv[], int length) 
 {
     HandleScope scope;
-    
+  
+    v8::String::AsciiValue cname(handle_->GetConstructorName());
+    String::Utf8Value signal(argv[0]);
+
+    //printf ("Emit, handle is '%s' '%s' [%p], length (%d) \n", *cname, *signal, handle_, length);
+
     // this will do the magic but dont forget to extend this object in JS from require("events").EventEmitter
     Local<Value> emit_v = handle_->Get(emit_symbol);
+    //printf ("EMIT PTR IS [%p] \n", emit_v);
+    //v8::String::AsciiValue ename(emit_v->ToString());
+    //printf ("Emit, emit is '%s' \n", *ename);
     if (emit_v->IsUndefined() || !emit_v->IsFunction()) return Null();
+
     Local<Function> emit = Local<Function>::Cast(emit_v);
     return emit->Call(handle_, length, argv);
 }
@@ -468,7 +477,7 @@ void GIRObject::SignalCallback(GClosure *closure,
         GValue p = param_values[i];
         args[i+1] = GIRValue::FromGValue(&p, NULL);
     }
-   
+
     Handle<Value> res = data->that->Emit(args, n_param_values+1);
     if (res != Null()) {
         //printf ("Call ToGValue '%s'\n", G_VALUE_TYPE_NAME(return_value));
@@ -814,6 +823,27 @@ GIFieldInfo *GIRObject::FindField(GIObjectInfo *inf, char *name)
     return field;
 }
 
+static GISignalInfo*
+_object_info_find_interface_signal(GIObjectInfo *inf, char *name)
+{
+    int ifaces = g_object_info_get_n_interfaces(inf);
+    GISignalInfo *signal = NULL;
+    for (int i = 0; i < ifaces; i++) {
+        GIInterfaceInfo *iface_info = g_object_info_get_interface(inf, i);
+        int n_signals = g_interface_info_get_n_signals(iface_info);
+        for (int n = 0; n < n_signals; n++) {
+            signal = g_interface_info_get_signal(iface_info, n);
+            if (g_str_equal(g_base_info_get_name(signal), name)) {
+                break;
+            }
+            g_base_info_unref(signal);
+        }
+        g_base_info_unref(iface_info);
+    }
+
+    return signal;
+}
+
 GISignalInfo *GIRObject::FindSignal(GIObjectInfo *inf, char *name) 
 {
     GISignalInfo *signal = g_object_info_find_signal(inf, name);
@@ -825,6 +855,8 @@ GISignalInfo *GIRObject::FindSignal(GIObjectInfo *inf, char *name)
             }
             g_base_info_unref(parent);
         }
+        if (!signal)
+            signal = _object_info_find_interface_signal(inf, name);
     }
     return signal;
 }
