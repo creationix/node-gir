@@ -249,10 +249,10 @@ void GIRObject::DeleteParams(GParameter *params, int l)
     for (int i=0; i<l; i++) {
         if (params[i].name == NULL) 
             break;
-        delete[] params[i].name;
+        g_free((gchar *)params[i].name);
         g_value_unset(&params[i].value);
     }
-    delete[] params;
+    g_free(params);
 }
 
 v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
@@ -471,6 +471,7 @@ void GIRObject::SignalCallback(GClosure *closure,
     MarshalData *data = (MarshalData*)marshal_data;
     
     Handle<Value> args[n_param_values+1];
+    //printf ("SignalCallback : [%p] '%s' \n", data->event_name, data->event_name);
     args[0] = String::New(data->event_name);
     
     for (guint i=0; i<n_param_values; i++) {
@@ -489,8 +490,8 @@ void GIRObject::SignalCallback(GClosure *closure,
 void GIRObject::SignalFinalize(gpointer marshal_data, GClosure *c) 
 { 
     MarshalData *data = (MarshalData*)marshal_data;
-    delete[] data->event_name;
-    delete[] data;
+    g_free (data->event_name);
+    g_free (data);
 }
 
 Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args) 
@@ -675,12 +676,12 @@ Handle<Value> GIRObject::WatchSignal(const Arguments &args)
     String::Utf8Value sname(args[0]);
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
     GISignalInfo *signal = that->FindSignal(that->info, *sname);
-    
+    //printf ("WATCH : OBJ '%s', SIGNAL '%s' \n", G_OBJECT_TYPE_NAME (that->obj), *sname);
+
     if(signal) {
-        MarshalData *data = new MarshalData();
+        MarshalData *data = g_new(MarshalData, 1);
         data->that = that;
-        data->event_name = new char[strlen(*sname)];
-        strcpy(data->event_name, *sname);
+        data->event_name = g_strdup(*sname); 
         
         GClosure *closure = g_cclosure_new(G_CALLBACK(empty_func), NULL, NULL);
         g_closure_add_finalize_notifier(closure, data, GIRObject::SignalFinalize);
