@@ -21,7 +21,7 @@ static Persistent<String> emit_symbol;
 
 GIRStruct::GIRStruct(GIStructInfo *info) 
 { 
-    c_structure = g_try_malloc0(g_struct_info_get_size ((GIStructInfo*)info));
+    //c_structure = g_try_malloc0(g_struct_info_get_size ((GIStructInfo*)info));
 }
 
 Handle<Value> GIRStruct::New(gpointer c_structure, GIStructInfo *info) 
@@ -56,11 +56,6 @@ Handle<Value> GIRStruct::New(const Arguments &args)
 {
     HandleScope scope;
 
-    if (args.Length() > 0) {
-        g_error("Structure constructor doesn't expect any parameter");
-	    return BAD_ARGS("Structure constructor doesn't expect any parameter");
-    }
-
     String::AsciiValue className(args.Callee()->GetName());
     debug_printf ("Struct constructor '%s' \n", *className); 
     std::vector<StructFunctionTemplate>::iterator it;
@@ -76,8 +71,24 @@ Handle<Value> GIRStruct::New(const Arguments &args)
     if (info == NULL || !GI_IS_STRUCT_INFO(info)) {
         return EXCEPTION("Missed introspection structure info");
     }
-     
+   
+    GIBaseInfo *func  = (GIBaseInfo*) g_struct_info_find_method(info, "new");
+    if (func == NULL) {
+        return EXCEPTION("Missed introspection structure constructor info");
+    }
+   
+    GIArgument retval;
+    GITypeInfo *returned_type_info;
+    gint returned_array_length;
+    Func::CallAndGetPtr(NULL, func, args, TRUE, &retval, &returned_type_info, &returned_array_length);
+    
+    if (returned_type_info != NULL)
+        g_base_info_unref(returned_type_info);
+
     GIRStruct *obj = new GIRStruct(info);
+
+    /* Set underlying C structure */
+    obj->c_structure = (gpointer) retval.v_pointer;
 
     obj->Wrap(args.This());
     PushInstance(obj, args.This());
@@ -379,9 +390,10 @@ void GIRStruct::RegisterMethods(Handle<Object> target, GIStructInfo *info, const
         // Determine if method is static one.
         // If given function is neither method nor constructor, it's most likely static method.
         // In such case, do not set prototype method.
-        if (func_flag & GI_FUNCTION_IS_METHOD) { 
+        /*if (func_flag & GI_FUNCTION_IS_METHOD) { 
             NODE_SET_PROTOTYPE_METHOD(t, func_name, CallMethod);
-        } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
+            printf ("REGISTER STRUCT METHOD '%s' \n", g_function_info_get_symbol (func));*/
+        if ((func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
             // Create new function
             Local< Function > callback_func = FunctionTemplate::New(CallStaticMethod)->GetFunction();
             // Set name
@@ -391,6 +403,10 @@ void GIRStruct::RegisterMethods(Handle<Object> target, GIStructInfo *info, const
             callback_func->SetHiddenValue(String::New("GIInfo"), info_ptr);
             // Set v8 function
             t->Set(String::NewSymbol(func_name), callback_func);
+            //printf ("REGISTER STRUCT CTR '%s' \n", g_function_info_get_symbol (func));
+        } else {
+            NODE_SET_PROTOTYPE_METHOD(t, func_name, CallMethod);
+            //printf ("REGISTER STRUCT METHOD '%s' \n", g_function_info_get_symbol (func));
         }
         g_base_info_unref(func);
     }

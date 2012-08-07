@@ -11,6 +11,8 @@ namespace gir {
 class Func {
   public:
     static v8::Handle<v8::Value> Call(GObject *obj, GIFunctionInfo *info, const v8::Arguments &args, bool ignore_function_name);
+    static v8::Handle<v8::Value> CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const v8::Arguments &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length);
+
 };
 
 }

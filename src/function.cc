@@ -36,7 +36,7 @@ static void _gir_gi_argument_free(GIArgument *args, int length)
     args = NULL;
 }
 
-Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &args, bool ignore_function_name) {
+v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const Arguments &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length) {
 
     if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
         // rly not sure about this
@@ -49,9 +49,9 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         offset_ = 1;
     }
    
-    int returned_array_length = -1;
-    GITypeInfo *returned_type_info = g_callable_info_get_return_type(info);
-    int returned_array_real_pos = g_type_info_get_array_length(returned_type_info);
+    *returned_array_length = -1;
+    *returned_type_info = g_callable_info_get_return_type(info);
+    int returned_array_real_pos = g_type_info_get_array_length(*returned_type_info);
     int returned_array_pos = -1;
     int l = g_callable_info_get_n_args(info);
     int in_argc_c_length = offset_, out_argc_c_length = 0;
@@ -144,7 +144,6 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
     }
         
     GError *error = NULL;
-    GIArgument retval;
    
     // Initilize out arguments pointers
     int n;
@@ -156,7 +155,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
         //printf ("IN ARG[%d](%d) (%s) \n", n, in_argc_c_length, in_args[n].v_string);
     }
 
-    gboolean invoked = g_function_info_invoke(info, in_args, in_argc_c_length, out_args, out_argc_c_length, &retval, &error);
+    gboolean invoked = g_function_info_invoke(info, in_args, in_argc_c_length, out_args, out_argc_c_length, retval, &error);
 
     // Free possible allocated strings
     for (n = 0; n < out_c; n++) {
@@ -173,21 +172,40 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
 
     // TODO, set out values
 
-    GITypeTag tag = g_type_info_get_tag(returned_type_info);
+    GITypeTag tag = g_type_info_get_tag(*returned_type_info);
     // Set returned array length
     if (tag == GI_TYPE_TAG_ARRAY) {
         if (returned_array_pos > -1) {
-            returned_array_length = (int) GPOINTER_TO_INT(out_args_c[returned_array_pos]);
+            *returned_array_length = (int) GPOINTER_TO_INT(out_args_c[returned_array_pos]);
         }
     }
 
+    _gir_gi_argument_free(in_args, in_argc_c_length);
+    _gir_gi_argument_free(out_args, out_argc_c_length);
+    g_free(out_args_c);
+
+    return Null();
+}
+
+Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &args, bool ignore_function_name) {
+
+    if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
+        // rly not sure about this
+        debug_printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
+        obj = NULL;
+    }
+   
+    GIArgument retval;
+    GITypeInfo *returned_type_info;
+    gint returned_array_length;
+
+    CallAndGetPtr(obj, info, args, ignore_function_name, &retval, &returned_type_info, &returned_array_length); 
     Handle<Value> return_value = Args::FromGType(&retval, returned_type_info, returned_array_length);
 
     if (returned_type_info != NULL)
         g_base_info_unref(returned_type_info);
-    _gir_gi_argument_free(in_args, in_argc_c_length);
-    _gir_gi_argument_free(out_args, out_argc_c_length);
-    g_free(out_args_c);
+
+    /* TODO, free GIArgument ? */
 
     return return_value;
 }
