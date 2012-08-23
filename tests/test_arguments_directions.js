@@ -34,8 +34,7 @@ describe('Arguments direction', function() {
         });
 
         it('double', function() {
-            var done = "TODO";
-            done.should.equal("DONE");
+            win.set_property("opacity", 0.5)
         });
 
         it('null', function() {
