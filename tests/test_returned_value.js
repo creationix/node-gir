@@ -63,7 +63,7 @@ suite.addBatch({
         'object' : {
             topic: win, 
             'object': function (topic) {
-                pixbuf = new gdkPixbuf.Pixbuf(0, false, 1, 1, 1);
+                var pixbuf = new gdkPixbuf.Pixbuf(0, false, 1, 1, 1);
                 topic.set_icon(pixbuf);
                 var object_value = topic.get_icon();
                 assert.isObject(object_value);
