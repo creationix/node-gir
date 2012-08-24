@@ -11,9 +11,13 @@ var pixbuf = new GdkPixbuf.Pixbuf(0, false, 1, 1, 1);
 
 describe('Return value', function() {
 
-    it('integer', function() {
+    it('number', function() {
         var int_value = GObject.type_from_name("GtkWindow");
-        int_value.should.be.a('integer'); 
+        int_value.should.be.a('number'); 
+    });
+
+    it('integer', function() {
+
     });
 
     it('char', function() {
@@ -26,7 +30,7 @@ describe('Return value', function() {
     });
 
     it('boolean', function() {
-        win.is_active().should.be.a('bool');
+        win.get_decorated().should.be.a('boolean');
     });
 
     it('GValue', function() {
@@ -34,7 +38,7 @@ describe('Return value', function() {
     });
 
     it('null', function() {
-        win.get_icon().should.be.a('Undefined');
+        should.strictEqual(null, win.get_icon());
     });
 
     it('object', function() {
@@ -43,8 +47,8 @@ describe('Return value', function() {
     });
 
     it('void', function() {
-        var void_value = win.set_property('icon', pixbuf);
-        void_value.should.be.a('Undefined');
+        var void_value = win.set_attached_to(null);
+        should.strictEqual(undefined, void_value);
     });
 
     describe('array', function() {
