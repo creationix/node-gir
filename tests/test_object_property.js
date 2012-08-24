@@ -2,17 +2,9 @@
 var vows   = require('vows'),
     assert = require('assert');
 
-var gir = require('../gir');
-gir.init();
-
-// Let's use gtk window for testing purpose
-var gtk = require("./gtk");
-gtk.init(0);
-
-var gdkPixbuf = require("./gdkPixbuf");
-
-var objects = require('./objects');
-var win = objects.win;
+var TestGIR = require('./TestGIR');
+var win = TestGIR.win;
+var GdkPixbuf = TestGIR.GdkPixbuf;
 
 var suite = vows.describe('Gtk.Object');
 suite.addBatch({
@@ -70,7 +62,7 @@ suite.addBatch({
 		'object' : {
 			topic: win, 
 			'set object': function (topic) {
-				var pixbuf = new gdkPixbuf.Pixbuf(0, false, 1, 1, 1);
+				var pixbuf = new GdkPixbuf.Pixbuf(0, false, 1, 1, 1);
 				topic.icon = pixbuf;
 				assert.equal(topic.icon, pixbuf);
 			},

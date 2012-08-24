@@ -2,15 +2,8 @@
 var vows   = require('vows'),
     assert = require('assert');
 
-var gir = require('../gir');
-gir.init();
-
-// Let's use gtk window for testing purpose
-var gtk = require("./gtk");
-gtk.init(0);
-
-var objects = require('./objects');
-var win = objects.win;
+var TestGIR = require('./TestGIR');
+var win = TestGIR.win;
 
 var suite = vows.describe('Gtk.Object');
 suite.addBatch({
