@@ -56,21 +56,21 @@ suite.addBatch({
 		},
 		'double' : {
 			topic: win, 
-			'set 12,34': function (topic) {
-				topic.opacity = 12.34;
-				assert.equal(topic.opacity, 12.34);
+			'set 0.33': function (topic) {
+				topic.opacity = 0.33;
+				assert.equal(topic.opacity, 0.33);
 			},
-			'get 12,34': function (topic) {
-				assert.equal(topic.opacity, 12.34);
-				assert.notEqual(topic.opacity, 0,001);
+			'get 0.33': function (topic) {
+				assert.equal(topic.opacity, 0.33);
+				assert.notEqual(topic.opacity, 0.001);
 				assert.notEqual(topic.opacity, 2);
-				assert.notEqual(topic.opacity, 1,23);
+				assert.notEqual(topic.opacity, 1.23);
 			}
 		},
 		'object' : {
 			topic: win, 
 			'set object': function (topic) {
-				pixbuf = new gdkPixbuf.Pixbuf(0, false, 1, 1, 1);
+				var pixbuf = new gdkPixbuf.Pixbuf(0, false, 1, 1, 1);
 				topic.icon = pixbuf;
 				assert.equal(topic.icon, pixbuf);
 			},
