@@ -5,4 +5,4 @@ node_js:
 
 before_install: tests/travis_midgard.sh
 
-script: npm test
+script: DISPLAY=:0.0 npm test
