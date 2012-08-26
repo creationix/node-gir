@@ -998,12 +998,13 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
             }
             const char *func_name = g_base_info_get_name(func);
             GIFunctionInfoFlags func_flag = g_function_info_get_flags(func);
+
             // Determine if method is static one.
-            // If given function is neither method nor constructor, it's most likely static method.
-            // In such case, do not set prototype method.
+            // In such case, do not set prototype method but instead register
+            // a function attached to the namespace of the class.
             if (func_flag & GI_FUNCTION_IS_METHOD) {
                 NODE_SET_PROTOTYPE_METHOD(t, func_name, CallUnknownMethod);
-            } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
+            } else {
                 // Create new function
                 Local< Function > callback_func = FunctionTemplate::New(CallStaticMethod)->GetFunction();
                 // Set name
