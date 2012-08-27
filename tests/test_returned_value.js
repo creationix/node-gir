@@ -38,6 +38,7 @@ describe('Return value', function() {
     });
 
     it('null', function() {
+        win.set_icon(null);
         should.strictEqual(null, win.get_icon());
     });
 
