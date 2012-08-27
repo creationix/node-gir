@@ -141,21 +141,31 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
          * o.__call__("func_name", args) VS o.func_name(args) */
         const int real_arg_idx = ignore_function_name ? i : i + offset_;
         GIArgInfo *arg = g_callable_info_get_arg(info, i);
+        GITypeInfo *arg_type_info = g_arg_info_get_type(arg);
         GIDirection dir = g_arg_info_get_direction(arg);
+
         if(dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
             if(!Args::ToGType(args[real_arg_idx], &in_args[in_c], arg, NULL, FALSE)) {
-                return BAD_ARGS("IN arguments conversion failed");
+                gchar *instance_desc = Util::utf8StringFromValue(args[real_arg_idx]);
+                gchar *exc_msg = g_strdup_printf("Failed to convert argument %d \"%s\" to GI Type tag \"%s\"",
+                                                 in_c, instance_desc, g_type_tag_to_string(g_type_info_get_tag(arg_type_info)));
+                g_free(instance_desc);
+                return BAD_ARGS(exc_msg);
             }
-            //printf("IN ARG (%d) '%s' \n", in_c, in_args[in_c].v_string);
             in_c++;
         }
         if(dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT) { 
             if(!Args::ToGType(args[real_arg_idx], &out_args[out_c], arg, NULL, TRUE)) {
-                return BAD_ARGS("OUT arguments conversion failed");
+                gchar *instance_desc = Util::utf8StringFromValue(args[real_arg_idx]);
+                gchar *exc_msg = g_strdup_printf("Failed to convert output %d \"%s\" to GI Type tag \"%s\"",
+                                                 out_c, instance_desc, g_type_tag_to_string(g_type_info_get_tag(arg_type_info)));
+                g_free(instance_desc);
+                return BAD_ARGS(exc_msg);
             }
             out_c++;
         }
         g_base_info_unref(arg);
+        g_base_info_unref(arg_type_info);
     }
         
     GError *error = NULL;
