@@ -36,62 +36,50 @@ static void _gir_gi_argument_free(GIArgument *args, int length)
     args = NULL;
 }
 
-v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const Arguments &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length) {
+/* Check that the function is called with the correct number of arguments.
+ * Returns a newly allocated exception message string on failure, or NULL on success. */
+char * checkNumberOfArguments(GIFunctionInfo *info, const Arguments &args,
+                              int *in_arguments_count, int *out_arguments_count) {
 
-    if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
-        // rly not sure about this
-        debug_printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
-        obj = NULL;
-    }
-    
-    int offset_ = 0;
-    if(obj != NULL) {
-        offset_ = 1;
-    }
-   
-    *returned_array_length = -1;
-    *returned_type_info = g_callable_info_get_return_type(info);
-    int returned_array_real_pos = g_type_info_get_array_length(*returned_type_info);
-    int returned_array_pos = -1;
-    int l = g_callable_info_get_n_args(info);
-    int in_argc_c_length = offset_, out_argc_c_length = 0;
+    int in_argc = *in_arguments_count;
+    int out_argc = *out_arguments_count;
+
+    const int l = g_callable_info_get_n_args(info);
     int required_arguments = l;
     int optional_arguments = 0;
-    GIArgInfo *arg = NULL;
-    GITypeInfo *arg_type_info = NULL;
-    GIDirection dir;
 
+    // Compute number of required arguments
+    // Any out and error argument should be implicit
     for (int i=0; i<l; i++) {
-        arg = g_callable_info_get_arg(info, i);
-        dir = g_arg_info_get_direction(arg);
+        GIArgInfo *arg = g_callable_info_get_arg(info, i);
+        GITypeInfo *arg_type_info = g_arg_info_get_type(arg);
+
+        const GIDirection dir = g_arg_info_get_direction(arg);
         if(dir == GI_DIRECTION_IN) {
-            in_argc_c_length++;
+            in_argc++;
         }
         else if(dir == GI_DIRECTION_OUT) {
-            out_argc_c_length++;
+            out_argc++;
         }
         else {
-            out_argc_c_length++;
-            in_argc_c_length++;
+            out_argc++;
+            in_argc++;
         }
-        debug_printf("%s %s (%d) \n", 
-                g_type_tag_to_string(g_type_info_get_tag(g_arg_info_get_type(arg))), 
+        debug_printf("%s %s (%d) \n",
+                g_type_tag_to_string(g_type_info_get_tag(arg_type_info)),
                 g_base_info_get_name(arg),
                 dir);
 
-        // Compute number of required arguments
-        // Any out and error argument should be implicit
-        arg_type_info = g_arg_info_get_type(arg);
-        bool is_optional = g_arg_info_is_optional(arg);
-        bool may_be_null = g_arg_info_may_be_null(arg);
+        const bool is_optional = g_arg_info_is_optional(arg);
+        const bool may_be_null = g_arg_info_may_be_null(arg);
         if (g_type_info_get_tag(arg_type_info) == GI_TYPE_TAG_ERROR
                 || g_arg_info_get_direction(arg) == GI_DIRECTION_OUT
-                || is_optional == TRUE 
+                || is_optional == TRUE
                 || may_be_null == TRUE ) {
             required_arguments--;
         }
 
-        if (is_optional) 
+        if (is_optional)
             optional_arguments++;
 
         if (may_be_null)
@@ -100,14 +88,40 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
         g_base_info_unref(arg_type_info);
         g_base_info_unref(arg);
     }
-    debug_printf("(%d) in_argc_c_length is %d, out_argc_c_length is %d, offset is %d\n", l, in_argc_c_length, out_argc_c_length, offset_);
-    
+
+    *in_arguments_count = in_argc;
+    *out_arguments_count = out_argc;
+
     if (args.Length() != required_arguments) {
         if (args.Length() != CLAMP(args.Length(), required_arguments, required_arguments + optional_arguments)) {
             char *exc_msg = g_strdup_printf("Invalid number of arguments. Expected %d, got %d", required_arguments, args.Length());
-            return ThrowException(Exception::TypeError(String::New(exc_msg)));
+            return exc_msg;
         }
     }
+    return NULL;
+}
+
+
+v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const Arguments &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length) {
+
+    if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
+        // rly not sure about this
+        debug_printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
+        obj = NULL;
+    }
+
+    *returned_array_length = -1;
+    *returned_type_info = g_callable_info_get_return_type(info);
+    const int offset_ = (obj != NULL) ? 1 : 0;
+    const int l = g_callable_info_get_n_args(info);
+    int in_argc_c_length = offset_, out_argc_c_length = 0;
+
+    // Verify that function is called with right number of arguments
+    char *exc_msg = checkNumberOfArguments(info, args, &in_argc_c_length, &out_argc_c_length);
+    if (exc_msg) {
+        return ThrowException(Exception::TypeError(String::New(exc_msg)));
+    }
+    debug_printf("(%d) in_argc_c_length is %d, out_argc_c_length is %d, offset is %d\n", l, in_argc_c_length, out_argc_c_length, offset_);
 
     GIArgument *in_args = _gir_gi_argument_new(obj, in_argc_c_length);
     GIArgument *out_args = _gir_gi_argument_new(NULL, out_argc_c_length);
@@ -115,18 +129,19 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
     if (out_argc_c_length > 0) {
         out_args_c = g_new0(gpointer, out_argc_c_length);
     }
-    
+
+    const int returned_array_real_pos = g_type_info_get_array_length(*returned_type_info);
+    int returned_array_pos = -1;
     int in_c = offset_, out_c = 0;
-    int real_arg_idx = 0;
     for(int i=0; i<l; i++) {
         if (returned_array_real_pos == i) {
             returned_array_pos = out_c;
         }
-	    /* Ignore function name in arguments:    
-	    * o.__call__("func_name", args) VS o.func_name(args) */    
-        real_arg_idx = ignore_function_name ? i : i + offset_;
-        arg = g_callable_info_get_arg(info, i);
-        dir = g_arg_info_get_direction(arg);
+        /* Ignore function name in arguments:
+         * o.__call__("func_name", args) VS o.func_name(args) */
+        const int real_arg_idx = ignore_function_name ? i : i + offset_;
+        GIArgInfo *arg = g_callable_info_get_arg(info, i);
+        GIDirection dir = g_arg_info_get_direction(arg);
         if(dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
             if(!Args::ToGType(args[real_arg_idx], &in_args[in_c], arg, NULL, FALSE)) {
                 return BAD_ARGS("IN arguments conversion failed");
