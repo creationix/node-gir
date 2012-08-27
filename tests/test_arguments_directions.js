@@ -54,7 +54,6 @@ describe('Arguments direction', function() {
             //children.should.not.equal(null);
             children.length.should.not.be.below(1);
             children.should.include(GObject.type_from_name('GtkDialog'));
-            children.should.include(GObject.type_from_name('GtkApplicationWindow'));
             children.should.include(GObject.type_from_name('GtkAssistant'));
             children.should.include(GObject.type_from_name('GtkPlug'));
             children.should.include(GObject.type_from_name('GtkOffscreenWindow'));
