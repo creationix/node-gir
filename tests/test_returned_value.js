@@ -48,7 +48,7 @@ describe('Return value', function() {
     });
 
     it('void', function() {
-        var void_value = win.set_attached_to(null);
+        var void_value = win.resize(10, 10);
         should.strictEqual(undefined, void_value);
     });
 
