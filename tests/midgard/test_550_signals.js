@@ -17,6 +17,7 @@ var MidgardTest = require('./midgard_connection');
 var mgd = MidgardTest.cnc
 var from_connection_callback = '';
 var from_object_callback = '';
+var from_object_update_callback = '';
 var obj = null;
 
 // Callbacks
@@ -63,8 +64,21 @@ describe('Signals', function() {
             from_connection_callback.should.equal('MGD_ERR_OK');
         });
 
+        it('action-update', function() {
+            //obj = Midgard.Object.factory(mgd, "gir_test_book_store");
+            obj.on('action-update', function() {
+                from_object_update_callback = 'Object update';
+            });
+            obj.update();
+            from_object_update_callback.should.equal('Object update');
+            from_object_update_callback = '';
+            // Check if callback is still alive
+            obj.update();
+            from_object_update_callback.should.equal('Object update');
+        });
+
         it('action-purge', function() {
-            obj = Midgard.Object.factory(mgd, "gir_test_book_store");
+            //obj = Midgard.Object.factory(mgd, "gir_test_book_store");
             obj.on('action-purge', function() {
                 from_object_callback = 'Object purge';
             });

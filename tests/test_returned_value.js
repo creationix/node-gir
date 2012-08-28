@@ -1,91 +1,63 @@
 
-var vows   = require('vows'),
-    assert = require('assert');
+var mocha = require('mocha'),
+    should = require('should');
 
-var gir = require('../gir');
-gir.init();
+var TestGIR = require('./TestGIR');
+var win = TestGIR.win;
+var GdkPixbuf = TestGIR.GdkPixbuf;
+var GObject = TestGIR.GObject;
 
-// Let's use gtk window for testing purpose
-var gtk = require("./gtk");
-gtk.init(0);
+var pixbuf = new GdkPixbuf.Pixbuf(0, false, 1, 1, 1);
 
-var gdkPixbuf = require("./gdkPixbuf");
-var glib = require("./glib");
-var gobject = require("./gobject");
+describe('Return value', function() {
 
-var objects = require('./objects');
-var win = objects.win;
+    it('number', function() {
+        var int_value = GObject.type_from_name("GtkWindow");
+        int_value.should.be.a('number'); 
+    });
 
-var suite = vows.describe('Returned value');
-suite.addBatch({
-    'return' : {
-        'integer' : {
-            topic: win, 
-            'integer': function (topic) {
-                var int_value = gobject.type_from_name("GtkWindow");
-                assert.isNumber(int_value);
-            }
-        },
-        'char' : {
-            topic: win, 
-            'char': function (topic) {
-                topic.set_title("Lancelot");
-                var char_value = topic.get_title();
-                assert.isString(char_value);
-            }
-        },
-        'double' : {
-            topic: win, 
-            'double': function (topic) {
-                assert.equal("TODO", "DONE");
-            }
-        },
-        'boolean' : {
-            topic: win, 
-            'bool': function (topic) {
-                var boolean_value = topic.is_active();
-                assert.isBoolean(boolean_value);
-            }
-        },
-        'GValue' : {
-            topic: win, 
-            'GValue': function (topic) {
-                assert.equal("TODO", "DONE");
-            }
-        },
-        'null' : {
-            topic: win, 
-            'null': function (topic) {
-                var null_value = topic.get_icon();
-                assert.isNull(null_value);
-            }
-        },
-        'object' : {
-            topic: win, 
-            'object': function (topic) {
-                pixbuf = new gdkPixbuf.Pixbuf(0, false, 1, 1, 1);
-                topic.set_icon(pixbuf);
-                var object_value = topic.get_icon();
-                assert.isObject(object_value);
-            }
-        },
-        'void' : {
-            topic: win, 
-            'void': function (topic) {
-                var void_value = topic.set_icon(null);
-                assert.isUndefined(void_value);
-            }
-        },
-        'array' : {
-            topic: win, 
-            'GType': function (topic) {
-                var type = gobject.type_from_name("GtkWindow");
-                var gtype_array = gobject.type_children(type);
-                assert.isArray(gtype_array);
-            },
-            'Object': function (topic) {
-                assert.equal("TODO", "DONE");
-            }
-        }
-    }
-}).export(module);
+    it('integer', function() {
+
+    });
+
+    it('char', function() {
+        win.title = 'Lancelot';
+        win.title.should.be.a('string');
+    });
+
+    it('double', function() {
+
+    });
+
+    it('boolean', function() {
+        win.get_decorated().should.be.a('boolean');
+    });
+
+    it('GValue', function() {
+
+    });
+
+    it('null', function() {
+        win.set_icon(null);
+        should.strictEqual(null, win.get_icon());
+    });
+
+    it('object', function() {
+        win.icon = pixbuf;
+        win.icon.should.be.a('object');
+    });
+
+    it('void', function() {
+        var void_value = win.resize(10, 10);
+        should.strictEqual(undefined, void_value);
+    });
+
+    describe('array', function() {
+        it('GType', function() {
+            var type = GObject.type_from_name("GtkWindow");
+            var gtype_array = GObject.type_children(type);
+            gtype_array.length.should.not.equal(0);
+        });
+    });
+});
+

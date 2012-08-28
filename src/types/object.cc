@@ -249,10 +249,10 @@ void GIRObject::DeleteParams(GParameter *params, int l)
     for (int i=0; i<l; i++) {
         if (params[i].name == NULL) 
             break;
-        delete[] params[i].name;
+        g_free((gchar *)params[i].name);
         g_value_unset(&params[i].value);
     }
-    delete[] params;
+    g_free(params);
 }
 
 v8::Handle<v8::Value> PropertyGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
@@ -422,10 +422,19 @@ void GIRObject::SetPrototypeMethods(Handle<FunctionTemplate> t, char *name)
 Handle<Value> GIRObject::Emit(Handle<Value> argv[], int length) 
 {
     HandleScope scope;
-    
+  
+    v8::String::AsciiValue cname(handle_->GetConstructorName());
+    String::Utf8Value signal(argv[0]);
+
+    //printf ("Emit, handle is '%s' '%s' [%p], length (%d) \n", *cname, *signal, handle_, length);
+
     // this will do the magic but dont forget to extend this object in JS from require("events").EventEmitter
     Local<Value> emit_v = handle_->Get(emit_symbol);
+    //printf ("EMIT PTR IS [%p] \n", emit_v);
+    //v8::String::AsciiValue ename(emit_v->ToString());
+    //printf ("Emit, emit is '%s' \n", *ename);
     if (emit_v->IsUndefined() || !emit_v->IsFunction()) return Null();
+
     Local<Function> emit = Local<Function>::Cast(emit_v);
     return emit->Call(handle_, length, argv);
 }
@@ -462,26 +471,27 @@ void GIRObject::SignalCallback(GClosure *closure,
     MarshalData *data = (MarshalData*)marshal_data;
     
     Handle<Value> args[n_param_values+1];
+    //printf ("SignalCallback : [%p] '%s' \n", data->event_name, data->event_name);
     args[0] = String::New(data->event_name);
     
     for (guint i=0; i<n_param_values; i++) {
         GValue p = param_values[i];
         args[i+1] = GIRValue::FromGValue(&p, NULL);
     }
-   
-    printf ("EMIT \n");
+
     Handle<Value> res = data->that->Emit(args, n_param_values+1);
     if (res != Null()) {
         //printf ("Call ToGValue '%s'\n", G_VALUE_TYPE_NAME(return_value));
-        GIRValue::ToGValue(res, G_TYPE_UINT, return_value);
+        if (return_value && G_IS_VALUE(return_value))
+            GIRValue::ToGValue(res, G_VALUE_TYPE(return_value), return_value);
     }
 }
 
 void GIRObject::SignalFinalize(gpointer marshal_data, GClosure *c) 
 { 
     MarshalData *data = (MarshalData*)marshal_data;
-    delete[] data->event_name;
-    delete[] data;
+    g_free (data->event_name);
+    g_free (data);
 }
 
 Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args) 
@@ -499,29 +509,6 @@ Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args)
         return scope.Close(Func::Call(that->obj, func, args, TRUE));
     }
     return EXCEPTION("no such method");
-}
-
-Handle<Value> GIRObject::CallStaticMethod(const Arguments &args) 
-{
-    HandleScope scope;
-        
-    v8::String::AsciiValue fname(args.Callee()->GetName());
-    v8::Handle<v8::External> info_ptr = 
-        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
-    GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
-    debug_printf("Call static method '%s'.'%s' ('%s') \n",
-            g_base_info_get_namespace(func),
-            g_base_info_get_name(func), 
-            g_function_info_get_symbol(func));
-    
-    if (func) {
-        return scope.Close(Func::Call(NULL, func, args, TRUE));
-    }
-    else {
-        return EXCEPTION("no such method");
-    }
-    
-    return scope.Close(Undefined());
 }
 
 Handle<Value> GIRObject::CallMethod(const Arguments &args) 
@@ -666,12 +653,12 @@ Handle<Value> GIRObject::WatchSignal(const Arguments &args)
     String::Utf8Value sname(args[0]);
     GIRObject *that = node::ObjectWrap::Unwrap<GIRObject>(args.This()->ToObject());
     GISignalInfo *signal = that->FindSignal(that->info, *sname);
-    
+    //printf ("WATCH : OBJ '%s', SIGNAL '%s' \n", G_OBJECT_TYPE_NAME (that->obj), *sname);
+
     if(signal) {
-        MarshalData *data = new MarshalData();
+        MarshalData *data = g_new(MarshalData, 1);
         data->that = that;
-        data->event_name = new char[strlen(*sname)];
-        strcpy(data->event_name, *sname);
+        data->event_name = g_strdup(*sname); 
         
         GClosure *closure = g_cclosure_new(G_CALLBACK(empty_func), NULL, NULL);
         g_closure_add_finalize_notifier(closure, data, GIRObject::SignalFinalize);
@@ -814,6 +801,27 @@ GIFieldInfo *GIRObject::FindField(GIObjectInfo *inf, char *name)
     return field;
 }
 
+static GISignalInfo*
+_object_info_find_interface_signal(GIObjectInfo *inf, char *name)
+{
+    int ifaces = g_object_info_get_n_interfaces(inf);
+    GISignalInfo *signal = NULL;
+    for (int i = 0; i < ifaces; i++) {
+        GIInterfaceInfo *iface_info = g_object_info_get_interface(inf, i);
+        int n_signals = g_interface_info_get_n_signals(iface_info);
+        for (int n = 0; n < n_signals; n++) {
+            signal = g_interface_info_get_signal(iface_info, n);
+            if (g_str_equal(g_base_info_get_name(signal), name)) {
+                break;
+            }
+            g_base_info_unref(signal);
+        }
+        g_base_info_unref(iface_info);
+    }
+
+    return signal;
+}
+
 GISignalInfo *GIRObject::FindSignal(GIObjectInfo *inf, char *name) 
 {
     GISignalInfo *signal = g_object_info_find_signal(inf, name);
@@ -825,6 +833,8 @@ GISignalInfo *GIRObject::FindSignal(GIObjectInfo *inf, char *name)
             }
             g_base_info_unref(parent);
         }
+        if (!signal)
+            signal = _object_info_find_interface_signal(inf, name);
     }
     return signal;
 }
@@ -965,14 +975,15 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
             }
             const char *func_name = g_base_info_get_name(func);
             GIFunctionInfoFlags func_flag = g_function_info_get_flags(func);
+
             // Determine if method is static one.
-            // If given function is neither method nor constructor, it's most likely static method.
-            // In such case, do not set prototype method.
+            // In such case, do not set prototype method but instead register
+            // a function attached to the namespace of the class.
             if (func_flag & GI_FUNCTION_IS_METHOD) {
                 NODE_SET_PROTOTYPE_METHOD(t, func_name, CallUnknownMethod);
-            } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
+            } else {
                 // Create new function
-                Local< Function > callback_func = FunctionTemplate::New(CallStaticMethod)->GetFunction();
+                Local< Function > callback_func = FunctionTemplate::New(Func::CallStaticMethod)->GetFunction();
                 // Set name
                 callback_func->SetName(String::New(func_name));
                 // Create external to hold GIBaseInfo and set it

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <glib.h>
 
 static char *_format_message(const char *fmt, va_list args)
 {
@@ -27,4 +26,18 @@ extern "C" void debug_printf(const char *fmt, ...)
 
 	printf("%s", msg);
 	g_free(msg);
+}
+
+namespace gir {
+namespace Util {
+
+gchar *utf8StringFromValue(v8::Handle<v8::Value> value)
+{
+    v8::Local<v8::String> string = value->ToString();
+    gchar *buffer = g_new(gchar, string->Utf8Length());
+    string->WriteUtf8(buffer);
+    return buffer;
+}
+
+}
 }
