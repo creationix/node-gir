@@ -39,8 +39,7 @@ Handle<Value> NamespaceLoader::Load(const Arguments &args) {
     else {
         exports = NamespaceLoader::LoadNamespace(*namespace_, NULL);
     }
-    
-    
+     
     return scope.Close(exports);
 }
 
@@ -54,13 +53,10 @@ Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_, char *version) {
     if(!lib) {
         return EXCEPTION(er->message);
     }
-    char *active_namespace = new char[strlen(namespace_)];
-    strcpy(active_namespace, namespace_);
-    
+   
     type_libs.insert(std::make_pair(namespace_, lib));
     
-    Handle<Value> res = BuildClasses(active_namespace);
-    delete[] active_namespace;
+    Handle<Value> res = BuildClasses(namespace_);
     return res;
 }
 

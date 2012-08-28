@@ -19,6 +19,6 @@
     "mocha": "1.3.x"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha tests/midgard/test_*.js"
+    "test": "./node_modules/.bin/mocha tests/test_*.js tests/midgard/test_*.js"
   }
 }

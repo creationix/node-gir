@@ -26,19 +26,19 @@ describe('Midgard.TimeStamp', function() {
         it ('year', function() { 
             var v = MidgardTest.TimeStamp;
             v.year.should.be.a('number');
-            v.year.should.equal(0);
+            v.year.should.equal(1);
         });
 
         it ('month', function() { 
             var v = MidgardTest.TimeStamp;
             v.month.should.be.a('number');
-            v.month.should.equal(0);
+            v.month.should.equal(1);
         });
 
         it ('day', function() { 
             var v = MidgardTest.TimeStamp;
             v.day.should.be.a('number');
-            v.day.should.equal(0);
+            v.day.should.equal(1);
         });
 
         it ('hour', function() { 
@@ -62,7 +62,7 @@ describe('Midgard.TimeStamp', function() {
         it ('get string', function() { 
             var v = MidgardTest.TimeStamp;
             v.get_string().should.be.a('string');
-            v.get_string().should.equal('0000-00-00 00:00:00+0000');
+            v.get_string().should.equal('0001-01-01 00:00:00+0000');
         });
     });
 
