@@ -511,29 +511,6 @@ Handle<Value> GIRObject::CallUnknownMethod(const Arguments &args)
     return EXCEPTION("no such method");
 }
 
-Handle<Value> GIRObject::CallStaticMethod(const Arguments &args) 
-{
-    HandleScope scope;
-        
-    v8::String::AsciiValue fname(args.Callee()->GetName());
-    v8::Handle<v8::External> info_ptr = 
-        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
-    GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
-    debug_printf("Call static method '%s'.'%s' ('%s') \n",
-            g_base_info_get_namespace(func),
-            g_base_info_get_name(func), 
-            g_function_info_get_symbol(func));
-    
-    if (func) {
-        return scope.Close(Func::Call(NULL, func, args, TRUE));
-    }
-    else {
-        return EXCEPTION("no such method");
-    }
-    
-    return scope.Close(Undefined());
-}
-
 Handle<Value> GIRObject::CallMethod(const Arguments &args) 
 {
     HandleScope scope;
@@ -998,14 +975,15 @@ void GIRObject::RegisterMethods(Handle<Object> target, GIObjectInfo *info, const
             }
             const char *func_name = g_base_info_get_name(func);
             GIFunctionInfoFlags func_flag = g_function_info_get_flags(func);
+
             // Determine if method is static one.
-            // If given function is neither method nor constructor, it's most likely static method.
-            // In such case, do not set prototype method.
+            // In such case, do not set prototype method but instead register
+            // a function attached to the namespace of the class.
             if (func_flag & GI_FUNCTION_IS_METHOD) {
                 NODE_SET_PROTOTYPE_METHOD(t, func_name, CallUnknownMethod);
-            } else if (!(func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
+            } else {
                 // Create new function
-                Local< Function > callback_func = FunctionTemplate::New(CallStaticMethod)->GetFunction();
+                Local< Function > callback_func = FunctionTemplate::New(Func::CallStaticMethod)->GetFunction();
                 // Set name
                 callback_func->SetName(String::New(func_name));
                 // Create external to hold GIBaseInfo and set it
