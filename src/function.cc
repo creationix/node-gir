@@ -235,4 +235,29 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
     return return_value;
 }
 
+Handle<Value> Func::CallStaticMethod(const Arguments &args)
+{
+    HandleScope scope;
+
+    v8::Handle<v8::External> info_ptr =
+        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
+    GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
+    GIBaseInfo *container = g_base_info_get_container(func);
+
+    debug_printf("Call static method '%s.%s.%s' ('%s') \n",
+            g_base_info_get_namespace(func),
+            g_base_info_get_name(container),
+            g_base_info_get_name(func),
+            g_function_info_get_symbol(func));
+
+    if (func) {
+        return scope.Close(Func::Call(NULL, func, args, TRUE));
+    }
+    else {
+        return EXCEPTION("no such method");
+    }
+
+    return scope.Close(Undefined());
+}
+
 }

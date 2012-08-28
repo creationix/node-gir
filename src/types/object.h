@@ -56,7 +56,6 @@ class GIRObject : public node::ObjectWrap {
    
     static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
     static v8::Handle<v8::Value> CallUnknownMethod(const v8::Arguments &args);
-    static v8::Handle<v8::Value> CallStaticMethod(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetProperty(const v8::Arguments &args);
     static v8::Handle<v8::Value> SetProperty(const v8::Arguments &args);
     static v8::Handle<v8::Value> GetInterface(const v8::Arguments &args);

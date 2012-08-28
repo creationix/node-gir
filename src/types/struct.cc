@@ -270,29 +270,6 @@ Handle<Value> GIRStruct::GetStructure(gpointer c_structure)
     return Null();
 }
 
-Handle<Value> GIRStruct::CallStaticMethod(const Arguments &args) 
-{
-    HandleScope scope;
-        
-    v8::String::AsciiValue fname(args.Callee()->GetName());
-    v8::Handle<v8::External> info_ptr = 
-        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
-    GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
-    debug_printf("Call static method '%s'.'%s' ('%s') \n",
-            g_base_info_get_namespace(func),
-            g_base_info_get_name(func), 
-            g_function_info_get_symbol(func));
-    
-    if (func) {
-        return scope.Close(Func::Call(NULL, func, args, TRUE));
-    }
-    else {
-        return EXCEPTION("no such method");
-    }
-    
-    return scope.Close(Undefined());
-}
-
 Handle<Value> GIRStruct::CallMethod(const Arguments &args) 
 {
     HandleScope scope;
@@ -395,7 +372,7 @@ void GIRStruct::RegisterMethods(Handle<Object> target, GIStructInfo *info, const
             printf ("REGISTER STRUCT METHOD '%s' \n", g_function_info_get_symbol (func));*/
         if ((func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
             // Create new function
-            Local< Function > callback_func = FunctionTemplate::New(CallStaticMethod)->GetFunction();
+            Local< Function > callback_func = FunctionTemplate::New(Func::CallStaticMethod)->GetFunction();
             // Set name
             callback_func->SetName(String::New(func_name));
             // Create external to hold GIBaseInfo and set it

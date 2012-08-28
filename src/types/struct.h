@@ -51,7 +51,6 @@ class GIRStruct : public node::ObjectWrap {
     static void Initialize(v8::Handle<v8::Object> target, char *namespace_);
    
     static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
-    static v8::Handle<v8::Value> CallStaticMethod(const v8::Arguments &args);
     
     static void PushInstance(GIRStruct *obj, v8::Handle<v8::Value>);
     static v8::Handle<v8::Value> GetStructure(gpointer c_structure);
