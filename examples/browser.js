@@ -1,5 +1,6 @@
-var gtk = require("./gtk")
- , WebKit = require("./webkit");
+var gir = require('../gir')
+ ,  gtk = module.exports = gir.load('Gtk', '3.0')
+ ,  WebKit = module.exports = gir.load('WebKit', '3.0');
 
 gtk.init(0);
 
