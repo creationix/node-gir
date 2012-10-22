@@ -2,7 +2,6 @@
     'targets': [
         {
             'target_name': 'girepository',
-            'type': '<(library)',
             'sources': [
                 'src/init.cc',
                 'src/util.cc',
