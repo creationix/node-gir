@@ -1,7 +1,7 @@
 #include "function.h"
 #include "arguments.h"
 #include "util.h"
-
+#include "nan.h"
 #include <vector>
 
 using namespace v8;
@@ -38,7 +38,7 @@ static void _gir_gi_argument_free(GIArgument *args, int length)
 
 /* Check that the function is called with the correct number of arguments.
  * Returns a newly allocated exception message string on failure, or NULL on success. */
-char * checkNumberOfArguments(GIFunctionInfo *info, const Arguments &args,
+char * checkNumberOfArguments(GIFunctionInfo *info, const v8::FunctionCallbackInfo<v8::Value>& args,
                               int *in_arguments_count, int *out_arguments_count) {
 
     int in_argc = *in_arguments_count;
@@ -102,8 +102,8 @@ char * checkNumberOfArguments(GIFunctionInfo *info, const Arguments &args,
 }
 
 
-v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const Arguments &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length) {
-
+v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const v8::FunctionCallbackInfo<v8::Value> &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length) {
+    NanScope();
     if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
         // rly not sure about this
         debug_printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
@@ -119,7 +119,7 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
     // Verify that function is called with right number of arguments
     char *exc_msg = checkNumberOfArguments(info, args, &in_argc_c_length, &out_argc_c_length);
     if (exc_msg) {
-        return ThrowException(Exception::TypeError(String::New(exc_msg)));
+        NanThrowError(exc_msg);
     }
     debug_printf("(%d) in_argc_c_length is %d, out_argc_c_length is %d, offset is %d\n", l, in_argc_c_length, out_argc_c_length, offset_);
 
@@ -150,7 +150,7 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
                 gchar *exc_msg = g_strdup_printf("Failed to convert argument %d \"%s\" to GI Type tag \"%s\"",
                                                  in_c, instance_desc, g_type_tag_to_string(g_type_info_get_tag(arg_type_info)));
                 g_free(instance_desc);
-                return BAD_ARGS(exc_msg);
+                NanThrowError(exc_msg);
             }
             in_c++;
         }
@@ -160,7 +160,7 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
                 gchar *exc_msg = g_strdup_printf("Failed to convert output %d \"%s\" to GI Type tag \"%s\"",
                                                  out_c, instance_desc, g_type_tag_to_string(g_type_info_get_tag(arg_type_info)));
                 g_free(instance_desc);
-                return BAD_ARGS(exc_msg);
+                NanThrowError(exc_msg);
             }
             out_c++;
         }
@@ -192,7 +192,7 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
         _gir_gi_argument_free(in_args, in_argc_c_length);
         _gir_gi_argument_free(out_args, out_argc_c_length);
         g_free(out_args_c);
-        return EXCEPTION(error->message);
+        NanThrowError(error->message);
     }
 
     // TODO, set out values
@@ -209,10 +209,10 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
     _gir_gi_argument_free(out_args, out_argc_c_length);
     g_free(out_args_c);
 
-    return Null();
+    return NanNull();
 }
 
-Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &args, bool ignore_function_name) {
+Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const v8::FunctionCallbackInfo<v8::Value>&args, bool ignore_function_name) {
 
     if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
         // rly not sure about this
@@ -235,12 +235,12 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Arguments &ar
     return return_value;
 }
 
-Handle<Value> Func::CallStaticMethod(const Arguments &args)
+NAN_METHOD(Func::CallStaticMethod)
 {
-    HandleScope scope;
+    NanScope();
 
     v8::Handle<v8::External> info_ptr =
-        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
+        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(NanNew<String>("GIInfo")));
     GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
     GIBaseInfo *container = g_base_info_get_container(func);
 
@@ -251,13 +251,13 @@ Handle<Value> Func::CallStaticMethod(const Arguments &args)
             g_function_info_get_symbol(func));
 
     if (func) {
-        return scope.Close(Func::Call(NULL, func, args, TRUE));
+        NanReturnValue(Func::Call(NULL, func, args, TRUE));
     }
     else {
-        return EXCEPTION("no such method");
+        NanThrowError("no such method");
     }
 
-    return scope.Close(Undefined());
+    NanReturnUndefined();
 }
 
 }

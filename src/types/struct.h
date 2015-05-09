@@ -4,6 +4,7 @@
 #include <vector>
 #include <glib.h>
 #include <girepository.h>
+#include "nan.h"
 
 #ifndef GIR_STRUCT_INTERFACE_H
 #define GIR_STRUCT_INTERFACE_H
@@ -15,7 +16,7 @@ class GIRStruct;
 struct StructFunctionTemplate {
     char *type_name;
     GIObjectInfo *info;
-    v8::Persistent<v8::FunctionTemplate> function;
+    v8::Handle<v8::FunctionTemplate> function;
     GType type;
     char *namespace_;
 };
@@ -26,7 +27,7 @@ struct StructMarshalData {
 };
 
 struct StructData {
-    v8::Persistent<v8::Value> instance;
+    v8::Handle<v8::Value> instance;
     GIRStruct *gir_structure;
 };
 
@@ -43,14 +44,14 @@ class GIRStruct : public node::ObjectWrap {
     static std::vector<StructFunctionTemplate> templates;
     
     static v8::Handle<v8::Value> New(gpointer c_structure, GIStructInfo *info); 
-    static v8::Handle<v8::Value> New(const v8::Arguments &args);
+    static NAN_METHOD(New);
     
     static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
     static void RegisterMethods(v8::Handle<v8::Object> target, GIObjectInfo *info, const char *namespace_, v8::Handle<v8::FunctionTemplate> t); 
 
     static void Initialize(v8::Handle<v8::Object> target, char *namespace_);
    
-    static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
+    static NAN_METHOD(CallMethod);
     
     static void PushInstance(GIRStruct *obj, v8::Handle<v8::Value>);
     static v8::Handle<v8::Value> GetStructure(gpointer c_structure);

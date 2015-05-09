@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <node.h>
+#include "nan.h"
 
 using namespace v8;
 
@@ -24,9 +25,9 @@ void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info)
     target->Set(String::NewSymbol(func_name), temp->GetFunction());
 }
 
-Handle<Value> GIRFunction::Execute(const Arguments &args) 
+Handle<Value> GIRFunction::Execute(const v8::FunctionCallbackInfo<v8::Value>&args) 
 {
-    HandleScope scope;
+    NanScope();
     // Get GIFunctionInfo pointer    
     v8::Handle<v8::External> info_ptr =
         v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(String::New("GIInfo")));
@@ -38,13 +39,13 @@ Handle<Value> GIRFunction::Execute(const Arguments &args)
             g_function_info_get_symbol(func));
 
     if(func) {
-        return scope.Close(Func::Call(NULL, func, args, TRUE));
+        NanReturnValue(Func::Call(NULL, func, args, TRUE));
     }
     else {
-        return EXCEPTION("no such function");
+        NanThrowError("no such function");
     }
     
-    return scope.Close(Undefined());
+    NanReturnUndefined();
 }
 
 }

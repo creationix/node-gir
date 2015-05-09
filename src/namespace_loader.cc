@@ -19,14 +19,14 @@ void NamespaceLoader::Initialize(Handle<Object> target) {
     NODE_SET_METHOD(target, "search_path", NamespaceLoader::SearchPath);
 }
 
-Handle<Value> NamespaceLoader::Load(const Arguments &args) {
-    HandleScope scope;
+NAN_METHOD(NamespaceLoader::Load) {
+    NanScope();
     
     if(args.Length() < 1) {
-        EXCEPTION("too few arguments");
+        NanThrowError("too few arguments");
     }
     if(!args[0]->IsString()) {
-        EXCEPTION("argument has to be a string");
+        NanThrowError("argument has to be a string");
     }
     
     Handle<Value> exports;
@@ -40,7 +40,7 @@ Handle<Value> NamespaceLoader::Load(const Arguments &args) {
         exports = NamespaceLoader::LoadNamespace(*namespace_, NULL);
     }
      
-    return scope.Close(exports);
+    NanReturnValue(exports);
 }
 
 Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_, char *version) {
@@ -51,7 +51,7 @@ Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_, char *version) {
     GError *er = NULL;
     GITypelib *lib = g_irepository_require(repo, namespace_, version, (GIRepositoryLoadFlags)0, &er);
     if(!lib) {
-        return EXCEPTION(er->message);
+        NanThrowError(er->message);
     }
    
     type_libs.insert(std::make_pair(namespace_, lib));
@@ -61,7 +61,7 @@ Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_, char *version) {
 }
 
 Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
-    Handle<Object> exports = Object::New();
+    Handle<Object> exports = NanNew<Object>();
     
     int length = g_irepository_get_n_infos(repo, namespace_);
     for(int i=0; i<length; i++) {
@@ -122,26 +122,26 @@ void NamespaceLoader::ParseStruct(GIStructInfo *info, Handle<Object> &exports) {
 }
 
 void NamespaceLoader::ParseEnum(GIEnumInfo *info, Handle<Object> &exports) {
-    Handle<Object> obj = Object::New();
+    Handle<Object> obj = NanNew<Object>();
     
     int length = g_enum_info_get_n_values(info);
     for(int i=0; i<length; i++) {
         GIValueInfo *value = g_enum_info_get_value(info, i);
-        obj->Set(String::New(g_base_info_get_name(value)), Number::New(g_value_info_get_value(value)));
+        obj->Set(NanNew<String>(g_base_info_get_name(value)), NanNew<Number>(g_value_info_get_value(value)));
 	g_base_info_unref(value);
     }
-    exports->Set(String::New(g_base_info_get_name(info)), obj);
+    exports->Set(NanNew<String>(g_base_info_get_name(info)), obj);
 }
 
 void NamespaceLoader::ParseFlags(GIEnumInfo *info, Handle<Object> &exports) {
-    Handle<Object> obj = Object::New();
+    Handle<Object> obj = NanNew<Object>();
     
     int length = g_enum_info_get_n_values(info);
     for(int i=0; i<length; i++) {
         GIValueInfo *value = g_enum_info_get_value(info, i);
-        obj->Set(String::New(g_base_info_get_name(value)), Number::New(i));
+        obj->Set(NanNew<String>(g_base_info_get_name(value)), NanNew<Number>(i));
     }
-    exports->Set(String::New(g_base_info_get_name(info)), obj);
+    exports->Set(NanNew<String>(g_base_info_get_name(info)), obj);
 }
 
 void NamespaceLoader::ParseInterface(GIInterfaceInfo *info, Handle<Object> &exports) {
@@ -152,22 +152,22 @@ void NamespaceLoader::ParseUnion(GIUnionInfo *info, Handle<Object> &exports) {
 
 }
 
-Handle<Value> NamespaceLoader::SearchPath(const Arguments &args) {
-    HandleScope scope;
+NAN_METHOD(NamespaceLoader::SearchPath) {
+    NanScope();
     
     if(!repo) {
         repo = g_irepository_get_default();
     }
     GSList *ls = g_irepository_get_search_path();
     int l = g_slist_length(ls);
-    Handle<Array> res = Array::New(l);
+    Handle<Array> res = NanNew<Array>(l);
     
     for(int i=0; i<l; i++) {
         gpointer p = g_slist_nth_data(ls, i);
-        res->Set(Number::New(i), String::New((gchar*)p));
+        res->Set(NanNew<Number>(i), NanNew<String>((gchar*)p));
     }
     
-    return scope.Close(res);
+    NanReturnValue(res);
 }
 
 
