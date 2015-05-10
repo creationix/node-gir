@@ -171,7 +171,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
             return true;
         }
         if(g_type_is_a(gtype, G_TYPE_VALUE)) {
-            GValue gvalue = {0,};
+            GValue gvalue = {0, {{0}}};
             if(!GIRValue::ToGValue(v, G_TYPE_INVALID, &gvalue)) {
                 return false;
             }

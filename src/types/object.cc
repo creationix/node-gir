@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "object.h"
-#include "function.h"
+#include "function_type.h"
 #include "../util.h"
 #include "../function.h"
 #include "../values.h"
