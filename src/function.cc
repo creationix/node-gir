@@ -103,7 +103,6 @@ char * checkNumberOfArguments(GIFunctionInfo *info, const v8::FunctionCallbackIn
 
 
 v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const v8::FunctionCallbackInfo<v8::Value> &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length) {
-    NanScope();
     if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
         // rly not sure about this
         debug_printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
@@ -119,7 +118,7 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
     // Verify that function is called with right number of arguments
     char *exc_msg = checkNumberOfArguments(info, args, &in_argc_c_length, &out_argc_c_length);
     if (exc_msg) {
-        NanThrowError(exc_msg);
+        return args.GetIsolate()->ThrowException(Exception::TypeError(NanNew<String>(exc_msg)));
     }
     debug_printf("(%d) in_argc_c_length is %d, out_argc_c_length is %d, offset is %d\n", l, in_argc_c_length, out_argc_c_length, offset_);
 
