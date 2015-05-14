@@ -2,7 +2,7 @@
 #include <map>
 #include <glib.h>
 #include <girepository.h>
-
+#include "nan.h"
 #ifndef GIR_NAMESPACE_LOADER_H
 #define GIR_NAMESPACE_LOADER_H
 
@@ -14,9 +14,8 @@ class NamespaceLoader {
     static std::map<char *, GITypelib*> type_libs;
     
     static void Initialize(v8::Handle<v8::Object> target);
-    static v8::Handle<v8::Value> Load(const v8::Arguments &args);
-    
-    static v8::Handle<v8::Value> SearchPath(const v8::Arguments &args);
+    static NAN_METHOD(Load);
+    static NAN_METHOD(SearchPath);
 
   private:
     static v8::Handle<v8::Value> LoadNamespace(char *namespace_, char *version);

@@ -23,7 +23,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
     if (out == TRUE)
         return true;
 
-    if( ( v == Null() || v == Undefined() ) 
+    if( ( v == NanNull() || v == NanUndefined() ) 
 		    && (g_arg_info_may_be_null(info) 
 			    || tag == GI_TYPE_TAG_VOID)) {
         arg->v_pointer = NULL;
@@ -171,7 +171,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
             return true;
         }
         if(g_type_is_a(gtype, G_TYPE_VALUE)) {
-            GValue gvalue = {0,};
+            GValue gvalue = {0, {{0}}};
             if(!GIRValue::ToGValue(v, G_TYPE_INVALID, &gvalue)) {
                 return false;
             }
@@ -200,24 +200,24 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
     switch(param_tag) {
         case GI_TYPE_TAG_UINT8:
             if (arg->v_pointer == NULL)
-                return String::New("");
+                return NanNew<v8::String>("", 0);
             // TODO, copy bytes to array
             // http://groups.google.com/group/v8-users/browse_thread/thread/8c5177923675749e?pli=1
-            return String::New((char *)arg->v_pointer, array_length); 
+            return NanNew<v8::String>((char *)arg->v_pointer, array_length); 
             
         case GI_TYPE_TAG_GTYPE:
             if (arg->v_pointer == NULL)
-                return v8::Array::New(0);
-            arr = v8::Array::New(array_length);
+                return NanNew<v8::Array>(0);
+            arr = NanNew<v8::Array>(array_length);
             for (i = 0; i < array_length; i++) { 
-                arr->Set(i, v8::Integer::New((int)GPOINTER_TO_INT((((gpointer*)arg->v_pointer)[i]))));
+                arr->Set(i, NanNew<v8::Integer>((int)GPOINTER_TO_INT((((gpointer*)arg->v_pointer)[i]))));
             }
             return arr;
 
         case GI_TYPE_TAG_INTERFACE:
             if (arg->v_pointer == NULL)
-                return v8::Array::New(0);
-            arr = v8::Array::New(array_length);
+                return NanNew<v8::Array>(0);
+            arr = NanNew<v8::Array>(array_length);
             interface_info = g_type_info_get_interface(param_info);
 
             for (i = 0; i < array_length; i++) {                
@@ -229,7 +229,8 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
 
         default:
             gchar *exc_msg = g_strdup_printf("Converting array of '%s' is not supported", g_type_tag_to_string(param_tag));
-            return EXCEPTION(exc_msg); 
+            NanThrowError(exc_msg); 
+            return NanUndefined();
     }
 }
 
@@ -282,51 +283,51 @@ Handle<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type, int array_lengt
     
     switch(tag) {
         case GI_TYPE_TAG_VOID:
-            return Undefined();
+            return NanUndefined();
         case GI_TYPE_TAG_BOOLEAN:
-            return Boolean::New(arg->v_boolean);
+            return NanNew<Boolean>(arg->v_boolean);
         case GI_TYPE_TAG_INT8:
-            return Integer::New(arg->v_int8);
+            return NanNew<Integer>(arg->v_int8);
         case GI_TYPE_TAG_UINT8:
-            return Integer::NewFromUnsigned(arg->v_uint8);
+            return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint8);
         case GI_TYPE_TAG_INT16:
-            return Integer::New(arg->v_int16);
+            return NanNew<Integer>(arg->v_int16);
         case GI_TYPE_TAG_UINT16:
-            return Integer::NewFromUnsigned(arg->v_uint16);
+            return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint16);
         case GI_TYPE_TAG_INT32:
-            return Integer::New(arg->v_int32);
+            return NanNew<Integer>(arg->v_int32);
         case GI_TYPE_TAG_UINT32:
-            return Integer::NewFromUnsigned(arg->v_uint32);
+            return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint32);
         case GI_TYPE_TAG_INT64:
-            return Integer::New(arg->v_int64);
+            return NanNew<Number>(static_cast<double>(arg->v_int64));
         case GI_TYPE_TAG_UINT64:
-            return Integer::NewFromUnsigned(arg->v_uint64);
+            return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint64);
         case GI_TYPE_TAG_FLOAT:
-            return Number::New(arg->v_float);
+            return NanNew<Number>(arg->v_float);
         case GI_TYPE_TAG_DOUBLE:
-            return Number::New(arg->v_double);
+            return NanNew<Number>(arg->v_double);
         case GI_TYPE_TAG_GTYPE:
-            return Integer::NewFromUnsigned(arg->v_uint);
+            return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint);
         case GI_TYPE_TAG_UTF8:
-            return String::New(arg->v_string);
+            return NanNew<String>(arg->v_string);
         case GI_TYPE_TAG_FILENAME:
-            return String::New(arg->v_string);
+            return NanNew<String>(arg->v_string);
         case GI_TYPE_TAG_ARRAY:
             return Args::FromGTypeArray(arg, type, array_length);
         case GI_TYPE_TAG_INTERFACE:
-            return Undefined();
+            return NanUndefined();
         case GI_TYPE_TAG_GLIST:
-            return Undefined();
+            return NanUndefined();
         case GI_TYPE_TAG_GSLIST:
-            return Undefined();
+            return NanUndefined();
         case GI_TYPE_TAG_GHASH:
-            return Undefined();
+            return NanUndefined();
         case GI_TYPE_TAG_ERROR:
-            return Undefined();
+            return NanUndefined();
         case GI_TYPE_TAG_UNICHAR:
-            return Undefined();
+            return NanUndefined();
         default:
-            return Undefined();
+            return NanUndefined();
     }
 }
 
@@ -349,7 +350,7 @@ bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GList **list_p) {
     int l = arr->Length();
     for(int i=0; i<l; i++) {
         GIArgument arg = {0,};
-        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0), NULL, FALSE)) {
+        if(!Args::ToGType(arr->Get(NanNew<Number>(i)), &arg, g_type_info_get_param_type(info, 0), NULL, FALSE)) {
             return false;
         }
         list = g_list_prepend(list, arg.v_pointer);
@@ -367,7 +368,7 @@ bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GSList **slist_p) {
     int l = arr->Length();
     for(int i=0; i<l; i++) {
         GIArgument arg = {0,};
-        if(!Args::ToGType(arr->Get(Number::New(i)), &arg, g_type_info_get_param_type(info, 0), NULL, FALSE)) {
+        if(!Args::ToGType(arr->Get(NanNew<Number>(i)), &arg, g_type_info_get_param_type(info, 0), NULL, FALSE)) {
             return false;
         }
         slist = g_slist_prepend(slist, arg.v_pointer);

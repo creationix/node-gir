@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "struct.h"
-#include "function.h"
+#include "function_type.h"
 #include "../util.h"
 #include "../function.h"
 #include "../values.h"
@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <node.h>
+#include "nan.h"
 
 using namespace v8;
 using namespace std;
@@ -26,9 +27,9 @@ GIRStruct::GIRStruct(GIStructInfo *info)
 
 Handle<Value> GIRStruct::New(gpointer c_structure, GIStructInfo *info) 
 {
-    HandleScope scope;
+    NanScope();
     Handle<Value> res = GetStructure(c_structure);
-    if (res != Null()) {
+    if (res != NanNull()) {
         return res;
     }
 
@@ -49,14 +50,14 @@ Handle<Value> GIRStruct::New(gpointer c_structure, GIStructInfo *info)
         s->c_structure = c_structure;
     }
 
-    return scope.Close(res);
+    return res;
 }
 
-Handle<Value> GIRStruct::New(const Arguments &args) 
+NAN_METHOD(GIRStruct::New) 
 {
-    HandleScope scope;
+    NanScope();
 
-    String::AsciiValue className(args.Callee()->GetName());
+    NanAsciiString className(args.Callee()->GetName());
     debug_printf ("Struct constructor '%s' \n", *className); 
     std::vector<StructFunctionTemplate>::iterator it;
 
@@ -69,12 +70,12 @@ Handle<Value> GIRStruct::New(const Arguments &args)
     }
 
     if (info == NULL || !GI_IS_STRUCT_INFO(info)) {
-        return EXCEPTION("Missed introspection structure info");
+        NanThrowError("Missed introspection structure info");
     }
    
     GIBaseInfo *func  = (GIBaseInfo*) g_struct_info_find_method(info, "new");
     if (func == NULL) {
-        return EXCEPTION("Missed introspection structure constructor info");
+        NanThrowError("Missed introspection structure constructor info");
     }
    
     GIArgument retval;
@@ -94,7 +95,7 @@ Handle<Value> GIRStruct::New(const Arguments &args)
     PushInstance(obj, args.This());
     obj->info = info;
    
-    return scope.Close(args.This());
+    NanReturnThis();
 }
 
 GIFieldInfo *_find_structure_member(GIStructInfo *info, const gchar *name)
@@ -109,10 +110,11 @@ GIFieldInfo *_find_structure_member(GIStructInfo *info, const gchar *name)
     return NULL;
 }
 
-v8::Handle<v8::Value> FieldGetHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
+NAN_PROPERTY_GETTER(FieldGetHandler) 
 {
-    String::AsciiValue _name(name);
-    v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
+    NanScope();
+    NanAsciiString _name(property);
+    v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(args.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
     GIFieldInfo *field_info = NULL;
     if (base_info != NULL) 
@@ -121,9 +123,9 @@ v8::Handle<v8::Value> FieldGetHandler(v8::Local<v8::String> name, const v8::Acce
     if (field_info) {       
         if (!(g_field_info_get_flags(field_info) & GI_FIELD_IS_READABLE)) {
             // field is not readable
-            return EXCEPTION("member is not readable");
+            NanThrowError("member is not readable");
         }        
-        GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(info.This()->ToObject());
+        GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(args.This()->ToObject());
         GIArgument arg = {0, };
         Handle<Value> res;
         debug_printf("GetHandler [%p] (Get structure member) '%s.%s' \n", that->c_structure, g_base_info_get_name(base_info), *_name);
@@ -131,32 +133,33 @@ v8::Handle<v8::Value> FieldGetHandler(v8::Local<v8::String> name, const v8::Acce
         if (g_field_info_get_field(field_info, that->c_structure, &arg) == TRUE) {
             res = Args::FromGType(&arg, type_info, -1);
         } else {
-            res = Undefined();
+            res = NanUndefined();
         }
     
         // TODO free arg.v_string
         g_base_info_unref(type_info);
         g_base_info_unref(field_info);
         
-        return res;
+        NanReturnValue(res);
     }
 
     // Fallback to defaults
-    return info.This()->GetPrototype()->ToObject()->Get(name);
+    NanReturnValue(args.This()->GetPrototype()->ToObject()->Get(property));
 }
 
-v8::Handle<v8::Integer> FieldQueryHandler(v8::Local<v8::String> name, const v8::AccessorInfo &info) 
+NAN_PROPERTY_QUERY(FieldQueryHandler) 
 {
-    String::AsciiValue _name(name);
+    NanScope();
+    NanAsciiString _name(property);
     debug_printf("QUERY HANDLER '%s' \n", *_name);
-    return v8::Integer::New(0);
+    NanReturnValue(NanNew<v8::Integer>(0));
 }
 
-v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value > value, const v8::AccessorInfo &info) 
+NAN_PROPERTY_SETTER(FieldSetHandler) 
 {
-    String::AsciiValue _name(name);
+    NanAsciiString _name(property);
 
-    v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Data());
+    v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(args.Data());
     GIBaseInfo *base_info  = (GIBaseInfo*) info_ptr->Value();
     GIFieldInfo *field_info = NULL;
     if (base_info != NULL) 
@@ -165,10 +168,10 @@ v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value >
     if (field_info) {       
         if (!(g_field_info_get_flags(field_info) & GI_FIELD_IS_WRITABLE)) { 
             // field is not writable
-            return EXCEPTION("member is not writable");
+            NanThrowError("member is not writable");
         }
         
-        GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(info.This()->ToObject());
+        GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(args.This()->ToObject());
         debug_printf("SetHandler [%p] (Set structure member) '%s.%s' \n", that->c_structure, g_base_info_get_name(base_info), *_name);
         GIArgument arg = {0, };
         Handle<Value> res;
@@ -176,7 +179,7 @@ v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value >
         // FIXME, add TypeInfo argument when ArgInfo is NULL
         bool is_set = Args::ToGType(value, &arg, NULL, type_info, false);
         if (g_field_info_set_field(field_info, that->c_structure, &arg) == false) {
-            return EXCEPTION("Failed to set structure's field");
+            NanThrowError("Failed to set structure's field");
         } 
  
         /*GIArgument ar = {0, };
@@ -187,17 +190,15 @@ v8::Handle<v8::Value> FieldSetHandler(v8::Local<v8::String> name, Local< Value >
         g_base_info_unref(type_info);
         g_base_info_unref(field_info);
 
-        return v8::Boolean::New(is_set);
+        NanReturnValue(NanNew<v8::Boolean>(is_set));
     }
 
     // Fallback to defaults
-    return v8::Boolean::New(info.This()->GetPrototype()->ToObject()->Set(name, value));
+    NanReturnValue(NanNew<v8::Boolean>(args.This()->GetPrototype()->ToObject()->Set(property, value)));
 }
 
 void GIRStruct::Prepare(Handle<Object> target, GIStructInfo *info) 
 {
-    HandleScope scope;
-
     char *name = (char*)g_base_info_get_name(info);
     const char *namespace_ = g_base_info_get_namespace(info);
     g_base_info_ref(info);
@@ -211,9 +212,8 @@ void GIRStruct::Prepare(Handle<Object> target, GIStructInfo *info)
             || g_str_has_suffix(name, "IFace"))
         return;
 
-    Local<FunctionTemplate> temp = FunctionTemplate::New(New);
-    Persistent<FunctionTemplate> t = Persistent<FunctionTemplate>::New(temp);
-    t->SetClassName(String::New(name));
+    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+    t->SetClassName(NanNew<String>(name));
     
     StructFunctionTemplate oft;
     oft.type_name = name;
@@ -228,7 +228,7 @@ void GIRStruct::Prepare(Handle<Object> target, GIStructInfo *info)
     v8::Local<v8::ObjectTemplate> instance_t = t->InstanceTemplate();
     instance_t->SetInternalFieldCount(1);
     // Create external to hold GIBaseInfo and set it
-    v8::Handle<v8::External> info_handle = v8::External::New((void*)g_base_info_ref(info));
+    v8::Handle<v8::External> info_handle = NanNew<v8::External>((void*)g_base_info_ref(info));
     // Set fields handlers
     instance_t->SetNamedPropertyHandler(FieldGetHandler, FieldSetHandler, FieldQueryHandler, 0, 0, info_handle);
 
@@ -243,14 +243,14 @@ void GIRStruct::Initialize(Handle<Object> target, char *namespace_)
 
     for (it = templates.begin(); it != templates.end(); ++it) {
         if (strcmp(it->namespace_, namespace_) == 0) { 
-            target->Set(String::NewSymbol(g_base_info_get_name(it->info)), it->function->GetFunction());
+            target->Set(NanNew<String>(g_base_info_get_name(it->info)), it->function->GetFunction());
         }
     } 
 }
 
 void GIRStruct::PushInstance(GIRStruct *obj, Handle<Value> value) 
 {
-    Persistent<Object> p_value = Persistent<Object>::New(value->ToObject());
+    Local<Object> p_value = value->ToObject();
     obj->MakeWeak();
     
     StructData data;
@@ -267,33 +267,33 @@ Handle<Value> GIRStruct::GetStructure(gpointer c_structure)
             return it->instance;
         }
     }
-    return Null();
+    return NanNull();
 }
 
-Handle<Value> GIRStruct::CallMethod(const Arguments &args) 
+NAN_METHOD(GIRStruct::CallMethod) 
 {
-    HandleScope scope;
+    NanScope();
     
-    v8::String::AsciiValue fname(args.Callee()->GetName());
+    NanAsciiString fname(args.Callee()->GetName());
     GIRStruct *that = node::ObjectWrap::Unwrap<GIRStruct>(args.This()->ToObject());
     if (!GI_IS_STRUCT_INFO(that->info)) {
-	return EXCEPTION("Missed structure info to call method");
+	   NanThrowError("Missed structure info to call method");
     }
     GIFunctionInfo *func = g_struct_info_find_method(that->info, *fname);
     debug_printf("Call Method: '%s' [%p] \n", *fname, func);
     if (func) {
         debug_printf("\t Call symbol: '%s' \n", g_function_info_get_symbol(func));
-        return scope.Close(Func::Call((GObject *)that->c_structure, func, args, TRUE));
+        NanReturnValue(Func::Call((GObject *)that->c_structure, func, args, TRUE));
     }
     else {
-        return EXCEPTION("no such method");
+        NanThrowError("no such method");
     }
-    return scope.Close(Undefined());
+    NanReturnUndefined();
 }
 
 Handle<Object> GIRStruct::PropertyList(GIObjectInfo *info) 
 {
-    Handle<Object> list = Object::New();
+    Handle<Object> list = NanNew<Object>();
     bool first = true;
     int gcounter = 0;
     g_base_info_ref(info);
@@ -314,7 +314,7 @@ Handle<Object> GIRStruct::PropertyList(GIObjectInfo *info)
         int l = g_object_info_get_n_properties(info);
         for (int i=0; i<l; i++) {
             GIPropertyInfo *prop = g_object_info_get_property(info, i);
-            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(prop)));
+            list->Set(NanNew<Number>(i+gcounter), NanNew<String>(g_base_info_get_name(prop)));
             g_base_info_unref(prop);
         }
         gcounter += l;
@@ -326,7 +326,7 @@ Handle<Object> GIRStruct::PropertyList(GIObjectInfo *info)
 
 Handle<Object> GIRStruct::MethodList(GIObjectInfo *info) 
 {
-    Handle<Object> list = Object::New();
+    Handle<Object> list = NanNew<Object>();
     bool first = true;
     int gcounter = 0;
     g_base_info_ref(info);
@@ -347,7 +347,7 @@ Handle<Object> GIRStruct::MethodList(GIObjectInfo *info)
         int l = g_object_info_get_n_methods(info);
         for (int i=0; i<l; i++) {
             GIFunctionInfo *func = g_object_info_get_method(info, i);
-            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(func)));
+            list->Set(NanNew<Number>(i+gcounter), NanNew<String>(g_base_info_get_name(func)));
             g_base_info_unref(func);
         }
         gcounter += l;
@@ -372,14 +372,14 @@ void GIRStruct::RegisterMethods(Handle<Object> target, GIStructInfo *info, const
             printf ("REGISTER STRUCT METHOD '%s' \n", g_function_info_get_symbol (func));*/
         if ((func_flag & GI_FUNCTION_IS_CONSTRUCTOR)) {
             // Create new function
-            Local< Function > callback_func = FunctionTemplate::New(Func::CallStaticMethod)->GetFunction();
+            Local< Function > callback_func = NanNew<v8::FunctionTemplate>(Func::CallStaticMethod)->GetFunction();
             // Set name
-            callback_func->SetName(String::New(func_name));
+            callback_func->SetName(NanNew<String>(func_name));
             // Create external to hold GIBaseInfo and set it
-            v8::Handle<v8::External> info_ptr = v8::External::New((void*)g_base_info_ref(func));
-            callback_func->SetHiddenValue(String::New("GIInfo"), info_ptr);
+            v8::Handle<v8::External> info_ptr = NanNew<v8::External>((void*)g_base_info_ref(func));
+            callback_func->SetHiddenValue(NanNew<String>("GIInfo"), info_ptr);
             // Set v8 function
-            t->Set(String::NewSymbol(func_name), callback_func);
+            t->Set(NanNew<String>(func_name), callback_func);
             //printf ("REGISTER STRUCT CTR '%s' \n", g_function_info_get_symbol (func));
         } else {
             NODE_SET_PROTOTYPE_METHOD(t, func_name, CallMethod);
@@ -391,7 +391,7 @@ void GIRStruct::RegisterMethods(Handle<Object> target, GIStructInfo *info, const
 
 Handle<Object> GIRStruct::FieldList(GIObjectInfo *info) 
 {
-    Handle<Object> list = Object::New();
+    Handle<Object> list = NanNew<Object>();
     bool first = true;
     int gcounter = 0;
     g_base_info_ref(info);
@@ -412,7 +412,7 @@ Handle<Object> GIRStruct::FieldList(GIObjectInfo *info)
         int l = g_object_info_get_n_fields(info);
         for (int i=0; i<l; i++) {
             GIFieldInfo *field = g_object_info_get_field(info, i);
-            list->Set(Number::New(i+gcounter), String::New(g_base_info_get_name(field)));
+            list->Set(NanNew<Number>(i+gcounter), NanNew<String>(g_base_info_get_name(field)));
             g_base_info_unref(field);
         }
         gcounter += l;

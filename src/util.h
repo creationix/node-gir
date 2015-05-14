@@ -10,13 +10,13 @@
             static_cast<v8::PropertyAttribute>(v8::ReadOnly|v8::DontDelete))
 
 #define BAD_ARGS(_msg) \
-    ThrowException(Exception::TypeError(String::New(_msg)));
+    NanThrowTypeError(_msg);
 
 #define NO_UNDERLYING_OBJECT() \
-    ThrowException(Exception::Error(String::New("no underlying object found")));
+    NanThrowTypeError("no underlying object found");
 
 #define EXCEPTION(str) \
-    ThrowException(Exception::Error(String::New(str)));
+    NanThrowTypeError(str);
 
 extern "C" void debug_printf(const char *fmt, ...);
 

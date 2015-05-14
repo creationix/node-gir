@@ -5,6 +5,8 @@
 #include <glib.h>
 #include <girepository.h>
 
+#include "nan.h"
+
 #ifndef GIR_OBJECT_INTERFACE_H
 #define GIR_OBJECT_INTERFACE_H
 
@@ -15,7 +17,7 @@ class GIRObject;
 struct ObjectFunctionTemplate {
     char *type_name;
     GIObjectInfo *info;
-    v8::Persistent<v8::FunctionTemplate> function;
+    v8::Handle<v8::FunctionTemplate> function;
     GType type;
     char *namespace_;
 };
@@ -26,7 +28,7 @@ struct MarshalData {
 };
 
 struct InstanceData {
-    v8::Persistent<v8::Value> instance;
+    v8::Handle<v8::Value> instance;
     GIRObject *obj;
 };
 
@@ -46,7 +48,7 @@ class GIRObject : public node::ObjectWrap {
     
     static v8::Handle<v8::Value> New(GObject *obj, GIObjectInfo *info);
     static v8::Handle<v8::Value> New(GObject *obj, GType t);
-    static v8::Handle<v8::Value> New(const v8::Arguments &args);
+    static NAN_METHOD(New);
     
     static void Prepare(v8::Handle<v8::Object> target, GIObjectInfo *info);
     static void SetPrototypeMethods(v8::Handle<v8::FunctionTemplate> t, char *name);
@@ -54,14 +56,14 @@ class GIRObject : public node::ObjectWrap {
 
     static void Initialize(v8::Handle<v8::Object> target, char *namespace_);
    
-    static v8::Handle<v8::Value> CallMethod(const v8::Arguments &args);
-    static v8::Handle<v8::Value> CallUnknownMethod(const v8::Arguments &args);
-    static v8::Handle<v8::Value> GetProperty(const v8::Arguments &args);
-    static v8::Handle<v8::Value> SetProperty(const v8::Arguments &args);
-    static v8::Handle<v8::Value> GetInterface(const v8::Arguments &args);
-    static v8::Handle<v8::Value> GetField(const v8::Arguments &args);
-    static v8::Handle<v8::Value> WatchSignal(const v8::Arguments &args);
-    static v8::Handle<v8::Value> CallVFunc(const v8::Arguments &args);
+    static NAN_METHOD(CallMethod);
+    static NAN_METHOD(CallUnknownMethod);
+    static NAN_METHOD(GetProperty);
+    static NAN_METHOD(SetProperty);
+    static NAN_METHOD(GetInterface);
+    static NAN_METHOD(GetField);
+    static NAN_METHOD(WatchSignal);
+    static NAN_METHOD(CallVFunc);
     
     static void PushInstance(GIRObject *obj, v8::Handle<v8::Value>);
     static v8::Handle<v8::Value> GetInstance(GObject *obj);

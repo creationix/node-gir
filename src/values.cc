@@ -12,7 +12,7 @@ namespace gir {
 
 Handle<Value> GIRValue::FromGValue(GValue *v, GIBaseInfo *base_info) {
     GType type = G_VALUE_TYPE(v);
-    Handle<Value> value = Undefined();
+    Handle<Value> value = NanUndefined();
     const char *tmpstr;
     char *str;
     GIBaseInfo *boxed_info;
@@ -20,9 +20,9 @@ Handle<Value> GIRValue::FromGValue(GValue *v, GIBaseInfo *base_info) {
     switch (G_TYPE_FUNDAMENTAL(type)) {
         case G_TYPE_CHAR:
             str = new char[2];
-            str[0] = g_value_get_char(v);
+            str[0] = g_value_get_schar(v);
             str[1] = '\0';
-            value = String::New(str);
+            value = NanNew<String>(str);
             delete[] str;
             return value;
 
@@ -30,54 +30,54 @@ Handle<Value> GIRValue::FromGValue(GValue *v, GIBaseInfo *base_info) {
             str = new char[2];
             str[0] = g_value_get_uchar(v);
             str[1] = '\0';
-            value = String::New(str);
+            value = NanNew<String>(str);
             delete[] str;
             return value;
 
         case G_TYPE_BOOLEAN:
-            return Boolean::New(g_value_get_boolean(v));
+            return NanNew<Boolean>(g_value_get_boolean(v));
 
         case G_TYPE_INT:
-            return Number::New(g_value_get_int(v));
+            return NanNew<Number>(g_value_get_int(v));
             
         case G_TYPE_UINT:
-            return Number::New(g_value_get_uint(v));
+            return NanNew<Number>(g_value_get_uint(v));
             
         case G_TYPE_LONG:
-            return Number::New(g_value_get_long(v));
+            return NanNew<Number>(g_value_get_long(v));
 
         case G_TYPE_ULONG:
-            return Number::New(g_value_get_ulong(v));
+            return NanNew<Number>(g_value_get_ulong(v));
             
         case G_TYPE_INT64:
-            return Number::New(g_value_get_int64(v));
+            return NanNew<Number>(g_value_get_int64(v));
     
         case G_TYPE_UINT64:
-            return Number::New(g_value_get_uint64(v));
+            return NanNew<Number>(g_value_get_uint64(v));
     
         case G_TYPE_ENUM:
-            return Number::New(g_value_get_enum(v));
+            return NanNew<Number>(g_value_get_enum(v));
             
         case G_TYPE_FLAGS:
-            return Number::New(g_value_get_flags(v));
+            return NanNew<Number>(g_value_get_flags(v));
         
         case G_TYPE_FLOAT:
-            return Number::New(g_value_get_float(v));
+            return NanNew<Number>(g_value_get_float(v));
             
         case G_TYPE_DOUBLE:
-            return Number::New(g_value_get_double(v));
+            return NanNew<Number>(g_value_get_double(v));
             
         case G_TYPE_STRING:
             tmpstr = g_value_get_string(v);
-            return String::New(tmpstr ? tmpstr : "");
+            return NanNew<String>(tmpstr ? tmpstr : "");
             
         case G_TYPE_BOXED:
-            if (G_VALUE_TYPE(v) == G_TYPE_VALUE_ARRAY) {
-                return EXCEPTION("GIRValue - GValueArray conversion not supported");
+            if (G_VALUE_TYPE(v) == G_TYPE_ARRAY) {
+                NanThrowError("GIRValue - GValueArray conversion not supported");
             } else {
                 // Handle C structure held by boxed type
                 if (base_info == NULL)
-                    return EXCEPTION("GIRValue - missed base_info for boxed type");
+                    NanThrowError("GIRValue - missed base_info for boxed type");
                 boxed_info = g_irepository_find_by_gtype(NamespaceLoader::repo, G_VALUE_TYPE(v));
                 return GIRStruct::New((GIRStruct*)g_value_get_boxed(v), boxed_info);
             }
@@ -86,7 +86,7 @@ Handle<Value> GIRValue::FromGValue(GValue *v, GIBaseInfo *base_info) {
             return GIRObject::New(G_OBJECT(g_value_get_object(v)), type);
     
         default:
-            return EXCEPTION("GIRValue - conversion of '%s' type not supported");
+            NanThrowError("GIRValue - conversion of '%s' type not supported");
     }
 
     return value;
@@ -113,14 +113,14 @@ bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
         case G_TYPE_CHAR:
         if(value->IsString()) {
             String::Utf8Value str(value);
-            g_value_set_char(v, (*str)[0]);
+            g_value_set_schar(v, (*str)[0]);
             return true;
         }
 
         case G_TYPE_UCHAR:
         if(value->IsString()) {
             String::Utf8Value str(value);
-            g_value_set_uchar(v, (*str)[0]);
+            g_value_set_schar(v, (*str)[0]);
             return true;
         }
 
@@ -208,7 +208,7 @@ bool GIRValue::ToGValue(Handle<Value> value, GType type, GValue *v) {
         break;
 
         default:
-            EXCEPTION("Failed to convert value"); 
+            NanThrowError("Failed to convert value"); 
             return false;
         break;
     }
