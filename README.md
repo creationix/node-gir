@@ -98,8 +98,8 @@ it would be nice to be able to use it for desktop tools and applications.
 
 Here are some links and notes as I try to figure out how to do this.
 
- - <http://live.gnome.org/GObjectIntrospection/HowToWriteALanguageBinding>
- - <http://developer.gnome.org/gi/unstable/gi-girepository.html>
+ - <https://wiki.gnome.org/Projects/GObjectIntrospection/HowToWriteALanguageBinding>
+ - <https://developer.gnome.org/gi/unstable/>
 
 ## API Ideas
 
