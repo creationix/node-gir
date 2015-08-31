@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include <node.h>
-#include "nan.h"
+#include <nan.h>
 
 using namespace v8;
 
@@ -15,22 +15,21 @@ void GIRFunction::Initialize(Handle<Object> target, GIObjectInfo *info)
 {
     const char *func_name = g_base_info_get_name(info);
     // Create new function
-    Local<FunctionTemplate> temp = NanNew<FunctionTemplate>(Execute);
+    Local<FunctionTemplate> temp = Nan::New<FunctionTemplate>(Execute);
     // Set name
-    temp->GetFunction()->SetName(NanNew<String>(func_name));
+    temp->GetFunction()->SetName(Nan::New<String>(func_name).ToLocalChecked());
     // Create external to hold GIBaseInfo and set it
-    v8::Handle<v8::External> info_ptr = NanNew<v8::External>((void*)g_base_info_ref(info));
-    temp->GetFunction()->SetHiddenValue(NanNew<String>("GIInfo"), info_ptr);
+    v8::Handle<v8::External> info_ptr = Nan::New<v8::External>((void*)g_base_info_ref(info));
+    temp->GetFunction()->SetHiddenValue(Nan::New<String>("GIInfo").ToLocalChecked(), info_ptr);
     // Set symbol
-    target->Set(NanNew<String>(func_name), temp->GetFunction());
+    target->Set(Nan::New<String>(func_name).ToLocalChecked(), temp->GetFunction());
 }
 
 NAN_METHOD(GIRFunction::Execute) 
 {
-    NanScope();
-    // Get GIFunctionInfo pointer    
+    // Get GIFunctionInfo pointer
     v8::Handle<v8::External> info_ptr =
-        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(NanNew<String>("GIInfo")));
+        v8::Handle<v8::External>::Cast(info.Callee()->GetHiddenValue(Nan::New<String>("GIInfo").ToLocalChecked()));
     GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
 
     debug_printf("EXECUTE namespace: '%s',  name: '%s', symbol: '%s' \n", 
@@ -39,13 +38,13 @@ NAN_METHOD(GIRFunction::Execute)
             g_function_info_get_symbol(func));
 
     if(func) {
-        NanReturnValue(Func::Call(NULL, func, args, TRUE));
+        info.GetReturnValue().Set(Func::Call(NULL, func, info, TRUE));
     }
     else {
-        NanThrowError("no such function");
+        Nan::ThrowError("no such function");
     }
     
-    NanReturnUndefined();
+    info.GetReturnValue().SetUndefined();
 }
 
 }

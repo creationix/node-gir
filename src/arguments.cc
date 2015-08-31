@@ -13,20 +13,20 @@ namespace gir {
 
 bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo *type_info, bool out) {
     GITypeInfo *type = type_info;
-    if (info != NULL) 
+    if (info != nullptr)
         type = g_arg_info_get_type(info);
     GITypeTag tag = ReplaceGType(g_type_info_get_tag(type));
 
-    // nullify string so it be freed safely later 
-    arg->v_string = NULL;
+    // nullify string so it be freed safely later
+    arg->v_string = nullptr;
 
     if (out == TRUE)
         return true;
 
-    if( ( v == NanNull() || v == NanUndefined() ) 
-		    && (g_arg_info_may_be_null(info) 
+    if( ( v == Nan::Null() || v == Nan::Undefined() )
+		    && (g_arg_info_may_be_null(info)
 			    || tag == GI_TYPE_TAG_VOID)) {
-        arg->v_pointer = NULL;
+        arg->v_pointer = nullptr;
         return true;
     }
     if(tag == GI_TYPE_TAG_BOOLEAN) {
@@ -80,13 +80,13 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
     }
     if(tag == GI_TYPE_TAG_GLIST) {
         if(!v->IsArray()) { return false; }
-        //GList *list = NULL;
+        //GList *list = nullptr;
         //ArrayToGList(v, info, &list); // FIXME!!!
         return false;
     }
     if(tag == GI_TYPE_TAG_GSLIST) {
         if(!v->IsArray()) { return false; }
-        //GSList *list = NULL;
+        //GSList *list = nullptr;
         //ArrayToGList(v, info, &list); // FIXME!!!
         return false;
     }
@@ -97,53 +97,53 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
                 arg->v_pointer = (gpointer *) g_strdup(*_str);
                 return true;
             }
-            return false; 
+            return false;
         }
-        
+
         GIArrayType arr_type = g_type_info_get_array_type(info);
-        
+
         if(arr_type == GI_ARRAY_TYPE_C) {
-        
+
         }
         else if(arr_type == GI_ARRAY_TYPE_ARRAY) {
-        
+
         }
         else if(arr_type == GI_ARRAY_TYPE_PTR_ARRAY) {
-        
+
         }
         else if(arr_type == GI_ARRAY_TYPE_BYTE_ARRAY) {
-            
+
         }
         /*
         int l = g_type_info_get_array_length(info);
         for(int i=0; i<l; i++) {
-            
+
         }*/
         return false;
     }
     if(tag == GI_TYPE_TAG_GHASH) {
         if(!v->IsObject()) { return false; }
-        
+
         GITypeInfo *key_param_info, *val_param_info;
         //GHashTable *ghash;
 
         key_param_info = g_type_info_get_param_type(info, 0);
-        g_assert(key_param_info != NULL);
+        g_assert(key_param_info != nullptr);
         val_param_info = g_type_info_get_param_type(info, 1);
-        g_assert(val_param_info != NULL);
-        
+        g_assert(val_param_info != nullptr);
+
         // TODO: implement
 
         g_base_info_unref((GIBaseInfo*) key_param_info);
         g_base_info_unref((GIBaseInfo*) val_param_info);
-        
+
         return false;
     }
     if(tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *interface_info = g_type_info_get_interface(type);
-        g_assert(interface_info != NULL);
+        g_assert(interface_info != nullptr);
         GIInfoType interface_type = g_base_info_get_type(interface_info);
-        
+
         GType gtype;
         switch(interface_type) {
             case GI_INFO_TYPE_STRUCT:
@@ -166,7 +166,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
 
         if(g_type_is_a(gtype, G_TYPE_OBJECT)) {
             if(!v->IsObject()) { return false; }
-            GIRObject *gir_object = node::ObjectWrap::Unwrap<GIRObject>(v->ToObject());
+            GIRObject *gir_object = Nan::ObjectWrap::Unwrap<GIRObject>(v->ToObject());
             arg->v_pointer = gir_object->obj;
             return true;
         }
@@ -181,7 +181,7 @@ bool Args::ToGType(Handle<Value> v, GIArgument *arg, GIArgInfo *info, GITypeInfo
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -195,32 +195,32 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
 
     int i = 0;
     v8::Local<v8::Array> arr;
-    GIBaseInfo *interface_info = NULL;
+    GIBaseInfo *interface_info = nullptr;
 
     switch(param_tag) {
         case GI_TYPE_TAG_UINT8:
-            if (arg->v_pointer == NULL)
-                return NanNew<v8::String>("", 0);
+            if (arg->v_pointer == nullptr)
+                return Nan::New("", 0).ToLocalChecked();
             // TODO, copy bytes to array
             // http://groups.google.com/group/v8-users/browse_thread/thread/8c5177923675749e?pli=1
-            return NanNew<v8::String>((char *)arg->v_pointer, array_length); 
-            
+            return Nan::New((char *)arg->v_pointer, array_length).ToLocalChecked();
+
         case GI_TYPE_TAG_GTYPE:
-            if (arg->v_pointer == NULL)
-                return NanNew<v8::Array>(0);
-            arr = NanNew<v8::Array>(array_length);
-            for (i = 0; i < array_length; i++) { 
-                arr->Set(i, NanNew<v8::Integer>((int)GPOINTER_TO_INT((((gpointer*)arg->v_pointer)[i]))));
+            if (arg->v_pointer == nullptr)
+                return Nan::New<Array>();
+            arr = Nan::New<Array>(array_length);
+            for (i = 0; i < array_length; i++) {
+                Nan::Set(arr, i, Nan::New((int)GPOINTER_TO_INT( ((gpointer*)arg->v_pointer)[i] )));
             }
             return arr;
 
         case GI_TYPE_TAG_INTERFACE:
-            if (arg->v_pointer == NULL)
-                return NanNew<v8::Array>(0);
-            arr = NanNew<v8::Array>(array_length);
+            if (arg->v_pointer == nullptr)
+                return Nan::New<Array>();
+            arr = Nan::New<Array>(array_length);
             interface_info = g_type_info_get_interface(param_info);
 
-            for (i = 0; i < array_length; i++) {                
+            for (i = 0; i < array_length; i++) {
                 GObject *o = (GObject*)((gpointer*)arg->v_pointer)[i];
                 arr->Set(i, GIRObject::New(o, interface_info));
             }
@@ -229,29 +229,29 @@ Handle<Value> Args::FromGTypeArray(GIArgument *arg, GITypeInfo *type, int array_
 
         default:
             gchar *exc_msg = g_strdup_printf("Converting array of '%s' is not supported", g_type_tag_to_string(param_tag));
-            NanThrowError(exc_msg); 
-            return NanUndefined();
+            Nan::ThrowError(exc_msg);
+            return Nan::Undefined();
     }
 }
 
-Handle<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type, int array_length) {
+Local<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type, int array_length) {
     GITypeTag tag = g_type_info_get_tag(type);
 
     if(tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *interface_info = g_type_info_get_interface(type);
-        g_assert(interface_info != NULL);
+        g_assert(interface_info != nullptr);
         GIInfoType interface_type = g_base_info_get_type(interface_info);
-        
+
         if(interface_type == GI_INFO_TYPE_OBJECT) {
             return GIRObject::New(G_OBJECT(arg->v_pointer), interface_info);
         }
     }
-    
+
     if(tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *interface_info = g_type_info_get_interface(type);
-        g_assert(interface_info != NULL);
+        g_assert(interface_info != nullptr);
         GIInfoType interface_type = g_base_info_get_type(interface_info);
-        
+
         GType gtype;
         switch(interface_type) {
             case GI_INFO_TYPE_STRUCT:
@@ -271,63 +271,63 @@ Handle<Value> Args::FromGType(GIArgument *arg, GITypeInfo *type, int array_lengt
                 gtype = G_TYPE_NONE;
                 break;
         }
-        
+
         if(g_type_is_a(gtype, G_TYPE_OBJECT)) {
             GObject *o = G_OBJECT(arg->v_pointer);
             return GIRObject::New(o, G_OBJECT_TYPE(o));
         }
         if(g_type_is_a(gtype, G_TYPE_VALUE)) {
-            GIRValue::FromGValue((GValue*)arg->v_pointer, NULL);
+            GIRValue::FromGValue((GValue*)arg->v_pointer, nullptr);
         }
     }
-    
+
     switch(tag) {
         case GI_TYPE_TAG_VOID:
-            return NanUndefined();
+            return Nan::Undefined();
         case GI_TYPE_TAG_BOOLEAN:
-            return NanNew<Boolean>(arg->v_boolean);
+            return Nan::New<Boolean>(arg->v_boolean);
         case GI_TYPE_TAG_INT8:
-            return NanNew<Integer>(arg->v_int8);
+            return Nan::New(arg->v_int8);
         case GI_TYPE_TAG_UINT8:
             return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint8);
         case GI_TYPE_TAG_INT16:
-            return NanNew<Integer>(arg->v_int16);
+            return Nan::New(arg->v_int16);
         case GI_TYPE_TAG_UINT16:
             return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint16);
         case GI_TYPE_TAG_INT32:
-            return NanNew<Integer>(arg->v_int32);
+            return Nan::New(arg->v_int32);
         case GI_TYPE_TAG_UINT32:
             return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint32);
         case GI_TYPE_TAG_INT64:
-            return NanNew<Number>(static_cast<double>(arg->v_int64));
+            return Nan::New((double) arg->v_int64);
         case GI_TYPE_TAG_UINT64:
             return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint64);
         case GI_TYPE_TAG_FLOAT:
-            return NanNew<Number>(arg->v_float);
+            return Nan::New(arg->v_float);
         case GI_TYPE_TAG_DOUBLE:
-            return NanNew<Number>(arg->v_double);
+            return Nan::New(arg->v_double);
         case GI_TYPE_TAG_GTYPE:
             return Integer::NewFromUnsigned(v8::Isolate::GetCurrent(), arg->v_uint);
         case GI_TYPE_TAG_UTF8:
-            return NanNew<String>(arg->v_string);
+            return Nan::New(arg->v_string).ToLocalChecked();
         case GI_TYPE_TAG_FILENAME:
-            return NanNew<String>(arg->v_string);
+            return Nan::New(arg->v_string).ToLocalChecked();
         case GI_TYPE_TAG_ARRAY:
             return Args::FromGTypeArray(arg, type, array_length);
         case GI_TYPE_TAG_INTERFACE:
-            return NanUndefined();
+            return Nan::Undefined();
         case GI_TYPE_TAG_GLIST:
-            return NanUndefined();
+            return Nan::Undefined();
         case GI_TYPE_TAG_GSLIST:
-            return NanUndefined();
+            return Nan::Undefined();
         case GI_TYPE_TAG_GHASH:
-            return NanUndefined();
+            return Nan::Undefined();
         case GI_TYPE_TAG_ERROR:
-            return NanUndefined();
+            return Nan::Undefined();
         case GI_TYPE_TAG_UNICHAR:
-            return NanUndefined();
+            return Nan::Undefined();
         default:
-            return NanUndefined();
+            return Nan::Undefined();
     }
 }
 
@@ -345,12 +345,12 @@ GITypeTag Args::ReplaceGType(GITypeTag type) {
 }
 
 bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GList **list_p) {
-    GList *list = NULL;
+    GList *list = nullptr;
 
     int l = arr->Length();
     for(int i=0; i<l; i++) {
         GIArgument arg = {0,};
-        if(!Args::ToGType(arr->Get(NanNew<Number>(i)), &arg, g_type_info_get_param_type(info, 0), NULL, FALSE)) {
+        if(!Args::ToGType(arr->Get(Nan::New(i)), &arg, g_type_info_get_param_type(info, 0), nullptr, FALSE)) {
             return false;
         }
         list = g_list_prepend(list, arg.v_pointer);
@@ -363,12 +363,12 @@ bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GList **list_p) {
 }
 
 bool Args::ArrayToGList(Handle<Array> arr, GIArgInfo *info, GSList **slist_p) {
-    GSList *slist = NULL;
+    GSList *slist = nullptr;
 
     int l = arr->Length();
     for(int i=0; i<l; i++) {
         GIArgument arg = {0,};
-        if(!Args::ToGType(arr->Get(NanNew<Number>(i)), &arg, g_type_info_get_param_type(info, 0), NULL, FALSE)) {
+        if(!Args::ToGType(arr->Get(Nan::New(i)), &arg, g_type_info_get_param_type(info, 0), nullptr, FALSE)) {
             return false;
         }
         slist = g_slist_prepend(slist, arg.v_pointer);

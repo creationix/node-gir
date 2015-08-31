@@ -161,13 +161,14 @@ function makeArray(array, results) {
 /* BEGIN LOGIC */
 
 //save default module routines
-gir._gir_baseInit = gir.init;
+//gir._gir_baseInit = gir.init;
 gir._gir_baseLoad = gir.load;
 
 //add init flag property
-gir._gir_hasInit = false;
+//gir._gir_hasInit = false;
 
 //override default init
+/*
 gir.init = function() {
   //don't init twice, seems useless to do so
   if (!this._gir_hasInit) {
@@ -175,6 +176,7 @@ gir.init = function() {
     return gir['_gir_baseInit'].apply(this, Array.prototype.slice.call(arguments));
   }
 };
+*/
 
 //create callable method object
 function CallableMethod(methodName) {
@@ -194,7 +196,7 @@ function CallableMethod(methodName) {
 //override default loader
 gir.load = function() {
   //auto-init if needed
-  if (!this._gir_hasInit) this.init();
+  //if (!this._gir_hasInit) this.init();
   
   //load gir module
   var obj = gir['_gir_baseLoad'].apply(this, Array.prototype.slice.call(arguments));
