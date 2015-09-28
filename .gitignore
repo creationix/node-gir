@@ -3,3 +3,7 @@ build
 node_modules/
 npm-debug.log
 tests/midgard/test_data/*.db
+
+# debugging
+.gdb_history
+peda-session-*

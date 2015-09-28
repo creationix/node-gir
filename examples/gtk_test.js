@@ -17,7 +17,7 @@ console.log(w2);
 
 win.on("destroy", function() {
     console.log("destroyed", arguments[0] instanceof gtk.Window);
-    gtk.mainQuit();
+    gtk.main_quit();
 });
 button.on("clicked", function() {
     console.log("click :)", arguments[0] instanceof gtk.Button, arguments[0] == button);

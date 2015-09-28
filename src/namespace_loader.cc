@@ -11,62 +11,55 @@ using namespace v8;
 
 namespace gir {
 
-GIRepository *NamespaceLoader::repo = NULL;
+GIRepository *NamespaceLoader::repo = nullptr;
 std::map<char *, GITypelib*> NamespaceLoader::type_libs;
 
-void NamespaceLoader::Initialize(Handle<Object> target) {
-    NODE_SET_METHOD(target, "load", NamespaceLoader::Load);
-    NODE_SET_METHOD(target, "search_path", NamespaceLoader::SearchPath);
-}
-
 NAN_METHOD(NamespaceLoader::Load) {
-    NanScope();
-    
-    if(args.Length() < 1) {
-        NanThrowError("too few arguments");
+    if (info.Length() < 1) {
+        Nan::ThrowError("too few arguments");
     }
-    if(!args[0]->IsString()) {
-        NanThrowError("argument has to be a string");
+    if (!info[0]->IsString()) {
+        Nan::ThrowError("argument has to be a string");
     }
-    
-    Handle<Value> exports;
-    String::Utf8Value namespace_(args[0]);
-    
-    if(args.Length() > 1 && args[1]->IsString()) {
-        String::Utf8Value version(args[1]);
+
+    Local<Value> exports;
+    String::Utf8Value namespace_(info[0]);
+
+    if(info.Length() > 1 && info[1]->IsString()) {
+        String::Utf8Value version(info[1]);
         exports = NamespaceLoader::LoadNamespace(*namespace_, *version);
     }
     else {
-        exports = NamespaceLoader::LoadNamespace(*namespace_, NULL);
+        exports = NamespaceLoader::LoadNamespace(*namespace_, nullptr);
     }
-     
-    NanReturnValue(exports);
+
+    info.GetReturnValue().Set(exports);
 }
 
 Handle<Value> NamespaceLoader::LoadNamespace(char *namespace_, char *version) {
-    if(!repo) {
+    if (!repo) {
         repo = g_irepository_get_default();
     }
-    
+
     GError *er = NULL;
     GITypelib *lib = g_irepository_require(repo, namespace_, version, (GIRepositoryLoadFlags)0, &er);
-    if(!lib) {
-        NanThrowError(er->message);
+    if (!lib) {
+        Nan::ThrowError(er->message);
     }
-   
+
     type_libs.insert(std::make_pair(namespace_, lib));
-    
+
     Handle<Value> res = BuildClasses(namespace_);
     return res;
 }
 
 Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
-    Handle<Object> exports = NanNew<Object>();
-    
+    Handle<Object> exports = Nan::New<Object>();
+
     int length = g_irepository_get_n_infos(repo, namespace_);
-    for(int i=0; i<length; i++) {
+    for (int i = 0; i < length; i++) {
         GIBaseInfo *info = g_irepository_get_info(repo, namespace_, i);
-        
+
         switch(g_base_info_get_type(info)) {
             case GI_INFO_TYPE_BOXED:
                 //FIXME: GIStructInfo or GIUnionInfo
@@ -106,14 +99,14 @@ Handle<Value> NamespaceLoader::BuildClasses(char *namespace_) {
                 // Do nothing
                 break;
         }
-          
+
         g_base_info_unref(info);
     }
-    
+
     // when all classes have been created we can inherit them
     GIRObject::Initialize(exports, namespace_);
     GIRStruct::Initialize(exports, namespace_);
-    
+
     return exports;
 }
 
@@ -122,26 +115,26 @@ void NamespaceLoader::ParseStruct(GIStructInfo *info, Handle<Object> &exports) {
 }
 
 void NamespaceLoader::ParseEnum(GIEnumInfo *info, Handle<Object> &exports) {
-    Handle<Object> obj = NanNew<Object>();
-    
+    Handle<Object> obj = Nan::New<Object>();
+
     int length = g_enum_info_get_n_values(info);
     for(int i=0; i<length; i++) {
         GIValueInfo *value = g_enum_info_get_value(info, i);
-        obj->Set(NanNew<String>(g_base_info_get_name(value)), NanNew<Number>(g_value_info_get_value(value)));
-	g_base_info_unref(value);
+        Nan::Set(obj, Nan::New(g_base_info_get_name(value)).ToLocalChecked(), Nan::New<Number>(g_value_info_get_value(value)));
+    	g_base_info_unref(value);
     }
-    exports->Set(NanNew<String>(g_base_info_get_name(info)), obj);
+    Nan::Set(exports, Nan::New(g_base_info_get_name(info)).ToLocalChecked(), obj);
 }
 
 void NamespaceLoader::ParseFlags(GIEnumInfo *info, Handle<Object> &exports) {
-    Handle<Object> obj = NanNew<Object>();
-    
+    Handle<Object> obj = Nan::New<Object>();
+
     int length = g_enum_info_get_n_values(info);
     for(int i=0; i<length; i++) {
         GIValueInfo *value = g_enum_info_get_value(info, i);
-        obj->Set(NanNew<String>(g_base_info_get_name(value)), NanNew<Number>(i));
+        Nan::Set(obj, Nan::New(g_base_info_get_name(value)).ToLocalChecked(), Nan::New(i));
     }
-    exports->Set(NanNew<String>(g_base_info_get_name(info)), obj);
+    Nan::Set(exports, Nan::New(g_base_info_get_name(info)).ToLocalChecked(), obj);
 }
 
 void NamespaceLoader::ParseInterface(GIInterfaceInfo *info, Handle<Object> &exports) {
@@ -153,23 +146,19 @@ void NamespaceLoader::ParseUnion(GIUnionInfo *info, Handle<Object> &exports) {
 }
 
 NAN_METHOD(NamespaceLoader::SearchPath) {
-    NanScope();
-    
     if(!repo) {
         repo = g_irepository_get_default();
     }
     GSList *ls = g_irepository_get_search_path();
     int l = g_slist_length(ls);
-    Handle<Array> res = NanNew<Array>(l);
-    
+    Local<Array> res = Nan::New<Array>(l);
+
     for(int i=0; i<l; i++) {
         gpointer p = g_slist_nth_data(ls, i);
-        res->Set(NanNew<Number>(i), NanNew<String>((gchar*)p));
+        Nan::Set(res, Nan::New(i), Nan::New((gchar*)p).ToLocalChecked());
     }
-    
-    NanReturnValue(res);
+
+    info.GetReturnValue().Set(res);
 }
-
-
 
 }

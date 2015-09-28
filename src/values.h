@@ -1,10 +1,8 @@
-#include <v8.h>
+#pragma once
 
+#include <v8.h>
 #include <glib.h>
 #include <girepository.h>
-
-#ifndef GIR_VALUES_H
-#define GIR_VALUES_H
 
 namespace gir {
 
@@ -16,5 +14,3 @@ class GIRValue {
 };
 
 }
-
-#endif

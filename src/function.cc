@@ -1,24 +1,24 @@
 #include "function.h"
 #include "arguments.h"
 #include "util.h"
-#include "nan.h"
+#include <nan.h>
 #include <vector>
 
 using namespace v8;
 
 namespace gir {
 
-static GIArgument *_gir_gi_argument_new(GObject *obj, int length) 
+static GIArgument *_gir_gi_argument_new(GObject *obj, int length)
 {
     if (length < 1)
-        return NULL;
+        return nullptr;
 
     GIArgument *args = g_new0(GIArgument, length);
     for (int i = 0; i < length; i++) {
-        args[i].v_string = NULL;
+        args[i].v_string = nullptr;
     }
 
-    if (obj != NULL) 
+    if (obj != nullptr)
         args[0].v_pointer = obj;
 
     return args;
@@ -33,12 +33,12 @@ static void _gir_gi_argument_free(GIArgument *args, int length)
         //g_free(args[i].v_string); FIXME, it has to be freed
     }
     g_free(args);
-    args = NULL;
+    args = nullptr;
 }
 
 /* Check that the function is called with the correct number of arguments.
  * Returns a newly allocated exception message string on failure, or NULL on success. */
-char * checkNumberOfArguments(GIFunctionInfo *info, const v8::FunctionCallbackInfo<v8::Value>& args,
+char * checkNumberOfArguments(GIFunctionInfo *info, const Nan::FunctionCallbackInfo<v8::Value>& args,
                               int *in_arguments_count, int *out_arguments_count) {
 
     int in_argc = *in_arguments_count;
@@ -98,33 +98,34 @@ char * checkNumberOfArguments(GIFunctionInfo *info, const v8::FunctionCallbackIn
             return exc_msg;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 
-v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const v8::FunctionCallbackInfo<v8::Value> &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length) {
+v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, const Nan::FunctionCallbackInfo<v8::Value> &args, bool ignore_function_name, GIArgument *retval, GITypeInfo **returned_type_info, gint *returned_array_length) {
     if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
         // rly not sure about this
         debug_printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
-        obj = NULL;
+        obj = nullptr;
     }
 
     *returned_array_length = -1;
     *returned_type_info = g_callable_info_get_return_type(info);
-    const int offset_ = (obj != NULL) ? 1 : 0;
+    const int offset_ = (obj != nullptr) ? 1 : 0;
     const int l = g_callable_info_get_n_args(info);
     int in_argc_c_length = offset_, out_argc_c_length = 0;
 
     // Verify that function is called with right number of arguments
     char *exc_msg = checkNumberOfArguments(info, args, &in_argc_c_length, &out_argc_c_length);
     if (exc_msg) {
-        return args.GetIsolate()->ThrowException(Exception::TypeError(NanNew<String>(exc_msg)));
+        Nan::ThrowTypeError(exc_msg);
+        return Nan::Null();
     }
     debug_printf("(%d) in_argc_c_length is %d, out_argc_c_length is %d, offset is %d\n", l, in_argc_c_length, out_argc_c_length, offset_);
 
     GIArgument *in_args = _gir_gi_argument_new(obj, in_argc_c_length);
-    GIArgument *out_args = _gir_gi_argument_new(NULL, out_argc_c_length);
-    gpointer *out_args_c = NULL;
+    GIArgument *out_args = _gir_gi_argument_new(nullptr, out_argc_c_length);
+    gpointer *out_args_c = nullptr;
     if (out_argc_c_length > 0) {
         out_args_c = g_new0(gpointer, out_argc_c_length);
     }
@@ -144,31 +145,31 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
         GIDirection dir = g_arg_info_get_direction(arg);
 
         if(dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
-            if(!Args::ToGType(args[real_arg_idx], &in_args[in_c], arg, NULL, FALSE)) {
+            if(!Args::ToGType(args[real_arg_idx], &in_args[in_c], arg, nullptr, FALSE)) {
                 gchar *instance_desc = Util::utf8StringFromValue(args[real_arg_idx]);
                 gchar *exc_msg = g_strdup_printf("Failed to convert argument %d \"%s\" to GI Type tag \"%s\"",
                                                  in_c, instance_desc, g_type_tag_to_string(g_type_info_get_tag(arg_type_info)));
                 g_free(instance_desc);
-                NanThrowError(exc_msg);
+                Nan::ThrowError(exc_msg);
             }
             in_c++;
         }
-        if(dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT) { 
-            if(!Args::ToGType(args[real_arg_idx], &out_args[out_c], arg, NULL, TRUE)) {
+        if(dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT) {
+            if(!Args::ToGType(args[real_arg_idx], &out_args[out_c], arg, nullptr, TRUE)) {
                 gchar *instance_desc = Util::utf8StringFromValue(args[real_arg_idx]);
                 gchar *exc_msg = g_strdup_printf("Failed to convert output %d \"%s\" to GI Type tag \"%s\"",
                                                  out_c, instance_desc, g_type_tag_to_string(g_type_info_get_tag(arg_type_info)));
                 g_free(instance_desc);
-                NanThrowError(exc_msg);
+                Nan::ThrowError(exc_msg);
             }
             out_c++;
         }
         g_base_info_unref(arg);
         g_base_info_unref(arg_type_info);
     }
-        
-    GError *error = NULL;
-   
+
+    GError *error = nullptr;
+
     // Initilize out arguments pointers
     int n;
     for (n = 0; n < out_c; n++) {
@@ -191,7 +192,7 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
         _gir_gi_argument_free(in_args, in_argc_c_length);
         _gir_gi_argument_free(out_args, out_argc_c_length);
         g_free(out_args_c);
-        NanThrowError(error->message);
+        Nan::ThrowError(error->message);
     }
 
     // TODO, set out values
@@ -208,25 +209,25 @@ v8::Handle<v8::Value> Func::CallAndGetPtr(GObject *obj, GIFunctionInfo *info, co
     _gir_gi_argument_free(out_args, out_argc_c_length);
     g_free(out_args_c);
 
-    return NanNull();
+    return Nan::Null();
 }
 
-Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const v8::FunctionCallbackInfo<v8::Value>&args, bool ignore_function_name) {
+Local<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const Nan::FunctionCallbackInfo<v8::Value>&args, bool ignore_function_name) {
 
     if(g_function_info_get_flags(info) == GI_FUNCTION_IS_CONSTRUCTOR) {
         // rly not sure about this
         debug_printf("constructor! returns %s\n", g_type_tag_to_string( g_type_info_get_tag( g_callable_info_get_return_type(info) ) ));
-        obj = NULL;
+        obj = nullptr;
     }
-   
+
     GIArgument retval;
     GITypeInfo *returned_type_info;
     gint returned_array_length;
 
-    CallAndGetPtr(obj, info, args, ignore_function_name, &retval, &returned_type_info, &returned_array_length); 
-    Handle<Value> return_value = Args::FromGType(&retval, returned_type_info, returned_array_length);
+    CallAndGetPtr(obj, info, args, ignore_function_name, &retval, &returned_type_info, &returned_array_length);
+    Local<Value> return_value = Args::FromGType(&retval, returned_type_info, returned_array_length);
 
-    if (returned_type_info != NULL)
+    if (returned_type_info != nullptr)
         g_base_info_unref(returned_type_info);
 
     /* TODO, free GIArgument ? */
@@ -236,10 +237,7 @@ Handle<Value> Func::Call(GObject *obj, GIFunctionInfo *info, const v8::FunctionC
 
 NAN_METHOD(Func::CallStaticMethod)
 {
-    NanScope();
-
-    v8::Handle<v8::External> info_ptr =
-        v8::Handle<v8::External>::Cast(args.Callee()->GetHiddenValue(NanNew<String>("GIInfo")));
+    v8::Handle<v8::External> info_ptr = v8::Handle<v8::External>::Cast(info.Callee()->GetHiddenValue(Nan::New("GIInfo").ToLocalChecked()));
     GIBaseInfo *func  = (GIBaseInfo*) info_ptr->Value();
     GIBaseInfo *container = g_base_info_get_container(func);
 
@@ -250,13 +248,13 @@ NAN_METHOD(Func::CallStaticMethod)
             g_function_info_get_symbol(func));
 
     if (func) {
-        NanReturnValue(Func::Call(NULL, func, args, TRUE));
+        info.GetReturnValue().Set(Func::Call(nullptr, func, info, TRUE));
     }
     else {
-        NanThrowError("no such method");
+        Nan::ThrowError("no such method");
     }
 
-    NanReturnUndefined();
+    info.GetReturnValue().Set(Nan::Undefined());
 }
 
 }

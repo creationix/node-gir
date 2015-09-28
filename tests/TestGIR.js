@@ -1,6 +1,4 @@
-
 var Gir = require('../gir');
-Gir.init();
 
 var Gtk = Gir.load('Gtk', '3.0');
 Gtk.init(0);

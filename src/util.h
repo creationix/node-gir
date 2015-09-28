@@ -1,8 +1,7 @@
-#ifndef GIR_UTIL_H
-#define GIR_UTIL_H
+#pragma once
 
-#include <glib.h>
 #include <v8.h>
+#include <glib.h>
 
 #define GIR_DEFINE_CONSTANT(target, name, constant)                      \
   (target)->Set(v8::String::NewSymbol(name),                              \
@@ -10,13 +9,13 @@
             static_cast<v8::PropertyAttribute>(v8::ReadOnly|v8::DontDelete))
 
 #define BAD_ARGS(_msg) \
-    NanThrowTypeError(_msg);
+    Nan::ThrowTypeError(_msg);
 
 #define NO_UNDERLYING_OBJECT() \
-    NanThrowTypeError("no underlying object found");
+    Nan::ThrowTypeError("no underlying object found");
 
 #define EXCEPTION(str) \
-    NanThrowTypeError(str);
+    Nan::ThrowTypeError(str);
 
 extern "C" void debug_printf(const char *fmt, ...);
 
@@ -27,5 +26,3 @@ namespace Util {
 }
 
 }
-
-#endif

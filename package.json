@@ -20,5 +20,8 @@
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha tests/test_*.js tests/midgard/test_*.js"
+  },
+  "dependencies": {
+    "nan": "^2.0.5"
   }
 }

@@ -11,7 +11,7 @@
                 'src/values.cc',
                 'src/types/object.cc',
                 'src/types/struct.cc',
-                'src/types/function.cc'
+                'src/types/function_type.cc'
             ],
             'conditions': [
                 ['OS=="linux"',
@@ -29,6 +29,13 @@
                         ]
                     }
                 ]
+            ],
+            'include_dirs': [
+                '<!(node -e "require(\'nan\')")'
+            ],
+            'cflags': [
+                '-std=c++11',
+		'-g'
             ]
         }
     ]
